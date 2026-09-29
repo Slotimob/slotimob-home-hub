@@ -1,3 +1,4 @@
+import { useLiveLeaseRefs } from "@/hooks/useLiveLeaseRefs";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -156,8 +157,14 @@ export function ObligationsConfigForm({
   ], [customTypes]);
 
   const ownerInfo = unitContacts?.owner || activeLease?.owner;
-  const tenantInfo = unitContacts?.tenant || activeLease?.tenant;
-  const isVacant = unitContacts?.isVacant ?? !activeLease;
+  // O1: inquilinos dos contratos vivos do imóvel (inclui contratos de fração via lease_units)
+  const { tenants: liveTenants } = useLiveLeaseRefs(unitId);
+  const tenantInfo = unitContacts?.tenant || activeLease?.tenant
+    || (liveTenants.length === 1 && liveTenants[0].name ? { name: liveTenants[0].name } as any : null);
+  const multiTenantLabel = liveTenants.length > 1
+    ? liveTenants.map((t) => `${t.name || "Sem nome"}${t.subdivisionLabel ? ` (${t.subdivisionLabel})` : ""}`).join(", ")
+    : null;
+  const isVacant = liveTenants.length > 0 ? false : (unitContacts?.isVacant ?? !activeLease);
 
   // Initialize config once
   useEffect(() => {
@@ -357,9 +364,9 @@ export function ObligationsConfigForm({
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="text-xs text-muted-foreground">Inquilino</p>
+              <p className="text-xs text-muted-foreground">{multiTenantLabel ? "Inquilinos" : "Inquilino"}</p>
               <p className="text-sm font-medium">
-                {isVacant ? <span className="text-muted-foreground">Vago</span> : (tenantInfo?.name || "Não definido")}
+                {isVacant ? <span className="text-muted-foreground">Vago</span> : (multiTenantLabel || tenantInfo?.name || "Não definido")}
               </p>
             </div>
           </div>

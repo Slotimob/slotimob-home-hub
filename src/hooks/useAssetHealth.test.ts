@@ -18,4 +18,15 @@ describe("calculateObligationStatus", () => {
     future.setMonth(future.getMonth() + 3);
     expect(calculateObligationStatus(cfg, null, future)).toBe("pending");
   });
+  it("competência antes do início do contrato → before_contract", () => {
+    expect(calculateObligationStatus(cfg, null, new Date(2026, 7, 15), "2026-09-29")).toBe("before_contract");
+  });
+  it("mês do início sem transação → not_launched", () => {
+    expect(calculateObligationStatus(cfg, null, new Date(2026, 8, 15), "2026-09-29")).not.toBe("before_contract");
+  });
+  it("pago antes do início continua pago", () => {
+    expect(
+      calculateObligationStatus(cfg, { status: "paid", transaction_date: "2026-08-10" }, new Date(2026, 7, 15), "2026-09-29")
+    ).toBe("paid");
+  });
 });
