@@ -45,7 +45,6 @@ import { AssetDocuments } from '@/components/assets/AssetDocuments';
 import { TenantHistoryPanel } from '@/components/units/TenantHistoryPanel';
 import { UnitContractTab } from '@/components/units/UnitContractTab';
 import { UnitSubdivisionsPanel } from '@/components/units/UnitSubdivisionsPanel';
-import { UnitSubdivisionSetupAlert } from '@/components/units/SubdivisionSetupAlert';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -474,17 +473,7 @@ export default function UnitDetalhe() {
         </Alert>
       )}
 
-      {showSubdivisionsTab && unit?.id && (
-        <div className="mb-4">
-          <UnitSubdivisionSetupAlert
-            unitId={unit.id}
-            hasSubdivisions={unit.has_subdivisions}
-            intentType={unit.intent_type}
-            onAction={() => setActiveTab('subdivisions')}
-            actionLabel="Ir para Frações"
-          />
-        </div>
-      )}
+      {/* I5: o aviso de frações aparece uma vez por tela — na aba Informações (formulário) e na aba Frações (painel). */}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className={cn('grid w-full', tabsCount === 8 ? 'grid-cols-8' : 'grid-cols-7')}>
