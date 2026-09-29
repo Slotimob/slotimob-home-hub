@@ -122,6 +122,8 @@ interface LeaseFinancialStepProps {
   header?: ReactNode;
   /** Em edição, o próximo reajuste salvo não deve ser sobrescrito pela sugestão */
   adjustmentLocked?: boolean;
+  /** CPF/CNPJ do inquilino (IRRF só se aplica com CNPJ). */
+  tenantDocument?: string | null;
 }
 
 
@@ -619,14 +621,6 @@ export function LeaseFinancialStep({
                 onChange={(v) => onChange({ admin_fee_percentage: v })}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="leasefinancialstep-caucao">Caução</Label>
-              <CurrencyInput id="leasefinancialstep-caucao"
-                value={value.deposit_amount.toString()}
-                onChange={(v) => onChange({ deposit_amount: parseFloat(v) || 0 })}
-                placeholder="R$ 0,00"
-              />
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -1028,6 +1022,7 @@ export function LeaseFinancialStep({
         rentGrace={rentGrace}
         rentDeductions={rentDeductions}
         rentWithholding={rentWithholding}
+        tenantDocument={tenantDocument}
         onChange={onChange}
       />
 
