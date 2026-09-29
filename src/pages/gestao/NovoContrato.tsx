@@ -877,6 +877,38 @@ export default function NovoContrato() {
   const primaryRef: LeaseUnitRef = { unit_id: effectiveUnitId, unit_subdivision_id: formData.unit_subdivision_id || null };
   const leaseSharesError = validateExtraUnits(primaryRef, extraUnits);
   const leaseUnitRefs = leaseUnitRefsFor(primaryRef, extraUnits);
+
+  // W2: soma dos preços anunciados dos imóveis/frações do contrato
+  const priceUnitIds = Array.from(new Set(leaseUnitRefs.map((r) => r.unit_id).filter(Boolean))).sort();
+  const priceSubIds = Array.from(
+    new Set(leaseUnitRefs.map((r) => r.unit_subdivision_id).filter(Boolean) as string[])
+  ).sort();
+  const { data: listedPrices } = useQuery({
+    queryKey: ["lease-listed-prices", priceUnitIds.join(","), priceSubIds.join(",")],
+    enabled: leaseUnitRefs.length > 1,
+    queryFn: async () => {
+      const [{ data: us }, { data: subs }] = await Promise.all([
+        supabase.from("units").select("id, unit_number, rent_price").in("id", priceUnitIds),
+        priceSubIds.length
+          ? supabase.from("unit_subdivisions").select("id, label, rent_price").in("id", priceSubIds)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+      return { units: (us as any[]) || [], subs: (subs as any[]) || [] };
+    },
+  });
+  const listedPriceSuggestion = useMemo(() => {
+    if (!listedPrices || leaseUnitRefs.length < 2) return null;
+    const parts = leaseUnitRefs.map((r, i) => {
+      const u = listedPrices.units.find((x) => x.id === r.unit_id);
+      const sub = r.unit_subdivision_id ? listedPrices.subs.find((x) => x.id === r.unit_subdivision_id) : null;
+      const price = Number(sub ? sub.rent_price : u?.rent_price) || 0;
+      const name = sub ? `${u?.unit_number || "Imóvel"} — ${sub.label}` : u?.unit_number || "Imóvel";
+      return { label: i === 0 ? `principal ${formatCurrencyBRL(price)}` : `${name} ${formatCurrencyBRL(price)}`, price };
+    });
+    const total = Math.round(parts.reduce((sum, p) => sum + p.price, 0) * 100) / 100;
+    if (total <= 0) return null;
+    return { total, text: parts.map((p) => p.label).join(" + ") };
+  }, [listedPrices, leaseUnitRefs]);
   const purposeUnitIds = Array.from(new Set(leaseUnitRefs.map((r) => r.unit_id).filter(Boolean))).sort();
   const { data: purposeUnitTypes = [] } = useQuery({
     queryKey: ["lease-purpose-unit-types", purposeUnitIds.join(",")],
@@ -1731,6 +1763,22 @@ export default function NovoContrato() {
               </AlertDescription>
             </Alert>
           )}
+          {step === "financial" && listedPriceSuggestion && Math.abs(listedPriceSuggestion.total - (formData.rent_amount || 0)) > 0.004 && (
+            <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-md border bg-muted/40 p-3 text-sm">
+              <p>
+                Soma dos preços anunciados: <span className="font-semibold">{formatCurrencyBRL(listedPriceSuggestion.total)}</span>{" "}
+                <span className="text-muted-foreground">({listedPriceSuggestion.text})</span>
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setFormData((prev) => ({ ...prev, rent_amount: listedPriceSuggestion.total }))}
+              >
+                Usar soma
+              </Button>
+            </div>
+          )}
           {step === "financial" && (
             <LeaseFinancialStep
               value={formData as unknown as LeaseFinancialValue}
@@ -2458,6 +2506,59 @@ export default function NovoContrato() {
                   </span>
                   <span>Vencimento:</span>
                   <span className="font-medium text-foreground">Dia {formData.due_day}</span>
+                  <span>Vigência:</span>
+                  <span className="font-medium text-foreground">
+                    {formatDateOnly(formData.start_date, "dd/MM/yyyy")}
+                    {formData.is_indefinite_term || !formData.end_date
+                      ? " — prazo indeterminado"
+                      : ` a ${formatDateOnly(formData.end_date, "dd/MM/yyyy")}`}
+                  </span>
+                  <span>Finalidade:</span>
+                  <span className="font-medium text-foreground">{leasePurpose === "comercial" ? "Comercial" : "Residencial"}</span>
+                  <span>Taxa de administração:</span>
+                  <span className="font-medium text-foreground">
+                    {(formData.admin_fee_percentage || 0).toLocaleString("pt-BR")}%
+                  </span>
+                  {formData.rent_grace?.enabled && (
+                    <>
+                      <span>Carência:</span>
+                      <span className="font-medium text-foreground">
+                        {graceSummary(formData.rent_grace, formData.start_date).label || "configurada"}
+                      </span>
+                    </>
+                  )}
+                  {(formData.rent_deductions || []).some((d) => d.enabled && isValidRentDeduction(d)) && (
+                    <>
+                      <span>Abatimentos:</span>
+                      <span className="font-medium text-foreground">
+                        {(formData.rent_deductions || [])
+                          .filter((d) => d.enabled && isValidRentDeduction(d))
+                          .map((d) => {
+                            const n =
+                              d.recurrence === "installments"
+                                ? ` × ${d.installments || 1}`
+                                : d.recurrence === "monthly"
+                                  ? " por mês"
+                                  : "";
+                            return `${d.label}: ${formatCurrencyBRL(Number(d.amount) || 0)}${n}`;
+                          })
+                          .join("; ")}
+                      </span>
+                    </>
+                  )}
+                  {(formData as any).rent_withholding?.enabled && (
+                    <>
+                      <span>IRRF:</span>
+                      <span className="font-medium text-foreground">
+                        {(() => {
+                          const w = (formData as any).rent_withholding;
+                          if (w.mode === "percent") return `Retido pelo inquilino: ${(Number(w.percent) || 0).toLocaleString("pt-BR")}%`;
+                          if (w.mode === "fixed") return `Retido pelo inquilino: ${formatCurrencyBRL(Number(w.fixed_amount) || 0)}`;
+                          return "Retido pelo inquilino pela tabela progressiva";
+                        })()}
+                      </span>
+                    </>
+                  )}
                   <span>Garantia:</span>
                   <span className="font-medium text-foreground">
                     {GUARANTEE_OPTIONS.find((o) => o.value === formData.guarantee_type)?.label}
