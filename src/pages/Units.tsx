@@ -1,3 +1,4 @@
+import { useUnitStatusLabels } from '@/hooks/useUnitsAvailability';
 import { PropertyImage } from '@/components/ui/PropertyImage';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -771,7 +772,7 @@ const Units = () => {
                     <Badge 
                       className={`absolute top-2 right-2 ${UNIT_STATUS_STYLES[unit.status].badgeClasses}`}
                     >
-                      {UNIT_STATUS_STYLES[unit.status].label}
+                      {statusLabelFor(unit as any, UNIT_STATUS_STYLES[unit.status].label)}
                     </Badge>
                   </div>
                   <CardHeader className="pb-2">

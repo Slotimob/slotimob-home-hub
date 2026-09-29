@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { SubdivisionAvailabilityInput } from "@/lib/unit-availability";
+import { unitAvailability } from "@/lib/unit-availability";
 
 /** Frações das unidades informadas numa consulta só, agrupadas por unit_id. */
 export function useUnitsAvailability(unitIds: (string | null | undefined)[]) {
@@ -20,4 +21,17 @@ export function useUnitsAvailability(unitIds: (string | null | undefined)[]) {
       return map;
     },
   });
+}
+
+/** Rótulo do badge de status considerando frações ("Parcialmente alugado (X de Y frações)"). */
+export function useUnitStatusLabels(units: { id: string; status?: string | null; has_subdivisions?: boolean | null }[]) {
+  const { data: subs } = useUnitsAvailability(
+    units.filter((u) => u.has_subdivisions && u.status === "rented").map((u) => u.id),
+  );
+  return (unit: { id: string; status?: string | null; has_subdivisions?: boolean | null }, fallback: string) => {
+    const a = unitAvailability(unit, subs?.[unit.id]);
+    if (a.kind === "partial") return a.label;
+    if (a.kind === "available" && unit.status !== "available") return "Disponível";
+    return fallback;
+  };
 }
