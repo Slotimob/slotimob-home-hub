@@ -148,8 +148,8 @@ export function LeaseSpecialConditionsCard({
           {rentGrace.enabled && (
             <div className="space-y-3">
               <div className="space-y-2 sm:max-w-[220px]">
-                <Label>A partir da competência</Label>
-                <Input
+                <Label htmlFor="leasespecialconditionscard-a-partir-da-competencia">A partir da competência</Label>
+                <Input id="leasespecialconditionscard-a-partir-da-competencia"
                   type="month"
                   value={rentGrace.first_competency || defaultCompetency}
                   onChange={(e) => updateGrace({ first_competency: e.target.value || defaultCompetency })}
@@ -159,8 +159,8 @@ export function LeaseSpecialConditionsCard({
               {rentGrace.tiers.map((tier, index) => (
                 <div key={index} className="grid grid-cols-1 sm:grid-cols-[100px_1fr_1fr_auto] gap-2 items-end rounded-md border border-border p-2">
                   <div className="space-y-1">
-                    <Label className="text-xs">Meses</Label>
-                    <Input
+                    <Label htmlFor="leasespecialconditionscard-meses" className="text-xs">Meses</Label>
+                    <Input id="leasespecialconditionscard-meses"
                       type="number"
                       min={1}
                       max={36}
@@ -171,12 +171,12 @@ export function LeaseSpecialConditionsCard({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Tipo</Label>
+                    <Label htmlFor="leasespecialconditionscard-tipo" className="text-xs">Tipo</Label>
                     <Select
                       value={tier.mode}
                       onValueChange={(v) => updateTier(index, { mode: v as RentGraceTier["mode"], value: v === "free" ? undefined : tier.value ?? 0 })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="leasespecialconditionscard-tipo">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -191,14 +191,14 @@ export function LeaseSpecialConditionsCard({
                   <div className="space-y-1">
                     {tier.mode === "percent" && (
                       <>
-                        <Label className="text-xs">Desconto (%)</Label>
-                        <PercentInput value={tier.value ?? 0} onChange={(v) => updateTier(index, { value: v })} />
+                        <Label htmlFor="leasespecialconditionscard-desconto" className="text-xs">Desconto (%)</Label>
+                        <PercentInput id="leasespecialconditionscard-desconto" value={tier.value ?? 0} onChange={(v) => updateTier(index, { value: v })} />
                       </>
                     )}
                     {tier.mode === "fixed" && (
                       <>
-                        <Label className="text-xs">Valor a pagar</Label>
-                        <CurrencyInput
+                        <Label htmlFor="leasespecialconditionscard-valor-a-pagar" className="text-xs">Valor a pagar</Label>
+                        <CurrencyInput id="leasespecialconditionscard-valor-a-pagar"
                           value={(tier.value ?? 0).toString()}
                           onChange={(v) => updateTier(index, { value: parseFloat(v) || 0 })}
                           placeholder="R$ 0,00"
@@ -270,8 +270,8 @@ export function LeaseSpecialConditionsCard({
                   <div key={d.id} className="rounded-md border border-border p-3 space-y-3">
                     <div className="flex items-start gap-2">
                       <div className="space-y-1 flex-1">
-                        <Label className="text-xs">Descrição *</Label>
-                        <Input
+                        <Label htmlFor="leasespecialconditionscard-descricao" className="text-xs">Descrição *</Label>
+                        <Input id="leasespecialconditionscard-descricao"
                           value={d.label}
                           placeholder="Ex.: taxa extra de condomínio para benfeitoria"
                           onChange={(e) => updateDeduction(d.id, { label: e.target.value })}
@@ -290,9 +290,9 @@ export function LeaseSpecialConditionsCard({
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-xs">Motivo</Label>
+                        <Label htmlFor="leasespecialconditionscard-motivo" className="text-xs">Motivo</Label>
                         <Select value={d.reason} onValueChange={(v) => updateDeduction(d.id, { reason: v as RentDeductionReason })}>
-                          <SelectTrigger>
+                          <SelectTrigger id="leasespecialconditionscard-motivo">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -305,15 +305,15 @@ export function LeaseSpecialConditionsCard({
                         </Select>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs">Valor</Label>
-                        <CurrencyInput
+                        <Label htmlFor="leasespecialconditionscard-valor" className="text-xs">Valor</Label>
+                        <CurrencyInput id="leasespecialconditionscard-valor"
                           value={(d.amount || 0).toString()}
                           onChange={(v) => updateDeduction(d.id, { amount: parseFloat(v) || 0 })}
                           placeholder="R$ 0,00"
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs">Recorrência</Label>
+                        <Label htmlFor="leasespecialconditionscard-recorrencia" className="text-xs">Recorrência</Label>
                         <Select
                           value={d.recurrence}
                           onValueChange={(v) =>
@@ -323,7 +323,7 @@ export function LeaseSpecialConditionsCard({
                             })
                           }
                         >
-                          <SelectTrigger>
+                          <SelectTrigger id="leasespecialconditionscard-recorrencia">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -337,8 +337,8 @@ export function LeaseSpecialConditionsCard({
                       </div>
                       {d.recurrence === "installments" && (
                         <div className="space-y-1">
-                          <Label className="text-xs">Nº de parcelas</Label>
-                          <Input
+                          <Label htmlFor="leasespecialconditionscard-no-de-parcelas" className="text-xs">Nº de parcelas</Label>
+                          <Input id="leasespecialconditionscard-no-de-parcelas"
                             type="number"
                             min={2}
                             max={60}
@@ -352,8 +352,8 @@ export function LeaseSpecialConditionsCard({
                         </div>
                       )}
                       <div className="space-y-1">
-                        <Label className="text-xs">A partir da competência</Label>
-                        <Input
+                        <Label htmlFor="leasespecialconditionscard-a-partir-da-competencia-2" className="text-xs">A partir da competência</Label>
+                        <Input id="leasespecialconditionscard-a-partir-da-competencia-2"
                           type="month"
                           value={d.first_competency || defaultCompetency}
                           onChange={(e) => updateDeduction(d.id, { first_competency: e.target.value || defaultCompetency })}
@@ -361,8 +361,8 @@ export function LeaseSpecialConditionsCard({
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Observação (opcional)</Label>
-                      <Textarea
+                      <Label htmlFor="leasespecialconditionscard-observacao-opcional" className="text-xs">Observação (opcional)</Label>
+                      <Textarea id="leasespecialconditionscard-observacao-opcional"
                         rows={2}
                         value={d.notes || ""}
                         onChange={(e) => updateDeduction(d.id, { notes: e.target.value })}
@@ -425,8 +425,8 @@ export function LeaseSpecialConditionsCard({
 
               {rentWithholding.mode === "fixed" && (
                 <div className="space-y-2 sm:max-w-[220px]">
-                  <Label>Valor retido por mês</Label>
-                  <CurrencyInput
+                  <Label htmlFor="leasespecialconditionscard-valor-retido-por-mes">Valor retido por mês</Label>
+                  <CurrencyInput id="leasespecialconditionscard-valor-retido-por-mes"
                     value={(rentWithholding.fixed_amount ?? 0).toString()}
                     onChange={(v) => updateWithholding({ fixed_amount: parseFloat(v) || 0 })}
                     placeholder="R$ 0,00"
@@ -435,8 +435,8 @@ export function LeaseSpecialConditionsCard({
               )}
               {rentWithholding.mode === "percent" && (
                 <div className="space-y-2 sm:max-w-[220px]">
-                  <Label>Percentual sobre o aluguel</Label>
-                  <PercentInput
+                  <Label htmlFor="leasespecialconditionscard-percentual-sobre-o-aluguel">Percentual sobre o aluguel</Label>
+                  <PercentInput id="leasespecialconditionscard-percentual-sobre-o-aluguel"
                     value={rentWithholding.percent ?? 0}
                     onChange={(v) => updateWithholding({ percent: v })}
                   />

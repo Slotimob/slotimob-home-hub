@@ -256,7 +256,7 @@ function ResponsibleField({
 
   return (
     <div className="space-y-2 sm:col-span-2">
-      <Label>Responsável</Label>
+      <Label htmlFor={`${idPrefix}>Responsável</Label>
       <Select value={chargeTo} onValueChange={(v) => handleChargeTo(v as LeaseChargeResponsible)}>
         <SelectTrigger id={`${idPrefix}-responsible`}>
           <SelectValue />
@@ -272,8 +272,8 @@ function ResponsibleField({
 
       {chargeTo === "agency" ? (
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Imobiliária responsável</Label>
-          <ContactSelector
+          <Label id="leasefinancialstep-imobiliaria-responsavel" className="text-xs text-muted-foreground">Imobiliária responsável</Label>
+          <ContactSelector aria-labelledby="leasefinancialstep-imobiliaria-responsavel"
             value={value.agency_contact_id || null}
             onChange={(contactId) =>
               onChange({ agency_contact_id: contactId, responsible_contact_id: contactId })
@@ -584,20 +584,20 @@ export function LeaseFinancialStep({
         <CardContent className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Valor do Aluguel *</Label>
-              <CurrencyInput
+              <Label htmlFor="leasefinancialstep-valor-do-aluguel">Valor do Aluguel *</Label>
+              <CurrencyInput id="leasefinancialstep-valor-do-aluguel"
                 value={value.rent_amount.toString()}
                 onChange={(v) => onChange({ rent_amount: parseFloat(v) || 0 })}
                 placeholder="R$ 0,00"
               />
             </div>
             <div className="space-y-2">
-              <Label>Dia de Vencimento *</Label>
+              <Label htmlFor="leasefinancialstep-dia-de-vencimento">Dia de Vencimento *</Label>
               <Select
                 value={value.due_day.toString()}
                 onValueChange={(v) => onChange({ due_day: parseInt(v) })}
               >
-                <SelectTrigger>
+                <SelectTrigger id="leasefinancialstep-dia-de-vencimento">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -613,15 +613,15 @@ export function LeaseFinancialStep({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Taxa de Administração (%)</Label>
-              <PercentInput
+              <Label htmlFor="leasefinancialstep-taxa-de-administracao">Taxa de Administração (%)</Label>
+              <PercentInput id="leasefinancialstep-taxa-de-administracao"
                 value={value.admin_fee_percentage}
                 onChange={(v) => onChange({ admin_fee_percentage: v })}
               />
             </div>
             <div className="space-y-2">
-              <Label>Caução</Label>
-              <CurrencyInput
+              <Label htmlFor="leasefinancialstep-caucao">Caução</Label>
+              <CurrencyInput id="leasefinancialstep-caucao"
                 value={value.deposit_amount.toString()}
                 onChange={(v) => onChange({ deposit_amount: parseFloat(v) || 0 })}
                 placeholder="R$ 0,00"
@@ -647,16 +647,16 @@ export function LeaseFinancialStep({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Início do Contrato *</Label>
-              <Input
+              <Label htmlFor="leasefinancialstep-inicio-do-contrato">Início do Contrato *</Label>
+              <Input id="leasefinancialstep-inicio-do-contrato"
                 type="date"
                 value={value.start_date}
                 onChange={(e) => onChange({ start_date: e.target.value })}
               />
             </div>
             <div className="space-y-2">
-              <Label>Fim do Contrato</Label>
-              <Input
+              <Label htmlFor="leasefinancialstep-fim-do-contrato">Fim do Contrato</Label>
+              <Input id="leasefinancialstep-fim-do-contrato"
                 type="date"
                 value={value.is_indefinite_term ? "" : value.end_date}
                 disabled={value.is_indefinite_term}
@@ -687,12 +687,12 @@ export function LeaseFinancialStep({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Índice de Reajuste *</Label>
+              <Label htmlFor="leasefinancialstep-indice-de-reajuste">Índice de Reajuste *</Label>
               <Select
                 value={value.adjustment_index}
                 onValueChange={(v) => onChange({ adjustment_index: v })}
               >
-                <SelectTrigger>
+                <SelectTrigger id="leasefinancialstep-indice-de-reajuste">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -704,12 +704,12 @@ export function LeaseFinancialStep({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Periodicidade do Reajuste</Label>
+              <Label htmlFor="leasefinancialstep-periodicidade-do-reajuste">Periodicidade do Reajuste</Label>
               <Select
                 value={String(value.adjustment_periodicity_months || 12)}
                 onValueChange={(v) => onChange({ adjustment_periodicity_months: parseInt(v) })}
               >
-                <SelectTrigger>
+                <SelectTrigger id="leasefinancialstep-periodicidade-do-reajuste">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -724,9 +724,9 @@ export function LeaseFinancialStep({
           </div>
 
           <div className="space-y-2">
-            <Label>Data do Próximo Reajuste</Label>
+            <Label htmlFor="leasefinancialstep-data-do-proximo-reajuste">Data do Próximo Reajuste</Label>
             <div className="flex items-center gap-2">
-              <Input
+              <Input id="leasefinancialstep-data-do-proximo-reajuste"
                 type="date"
                 value={value.next_adjustment_date || ""}
                 onChange={(e) => {
@@ -778,8 +778,8 @@ export function LeaseFinancialStep({
             {value.fire_insurance.enabled && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>Valor total da apólice</Label>
-                  <CurrencyInput
+                  <Label htmlFor="leasefinancialstep-valor-total-da-apolice">Valor total da apólice</Label>
+                  <CurrencyInput id="leasefinancialstep-valor-total-da-apolice"
                     value={value.fire_insurance.total_amount.toString()}
                     onChange={(v) => {
                       const total = parseFloat(v) || 0;
@@ -793,8 +793,8 @@ export function LeaseFinancialStep({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Nº de parcelas</Label>
-                  <Input
+                  <Label htmlFor="leasefinancialstep-no-de-parcelas">Nº de parcelas</Label>
+                  <Input id="leasefinancialstep-no-de-parcelas"
                     type="number"
                     min={1}
                     max={12}
@@ -811,8 +811,8 @@ export function LeaseFinancialStep({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Valor da parcela</Label>
-                  <CurrencyInput
+                  <Label htmlFor="leasefinancialstep-valor-da-parcela">Valor da parcela</Label>
+                  <CurrencyInput id="leasefinancialstep-valor-da-parcela"
                     value={value.fire_insurance.installment_amount.toString()}
                     onChange={(v) => {
                       const installment = parseFloat(v) || 0;
@@ -826,8 +826,8 @@ export function LeaseFinancialStep({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Primeiro vencimento</Label>
-                  <Input
+                  <Label htmlFor="leasefinancialstep-primeiro-vencimento">Primeiro vencimento</Label>
+                  <Input id="leasefinancialstep-primeiro-vencimento"
                     type="date"
                     value={value.fire_insurance.first_due_date || ""}
                     onChange={(e) => updateFireInsurance({ first_due_date: e.target.value || null })}
@@ -862,8 +862,8 @@ export function LeaseFinancialStep({
             {value.iptu_charge.enabled && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>Valor anual do IPTU</Label>
-                  <CurrencyInput
+                  <Label htmlFor="leasefinancialstep-valor-anual-do-iptu">Valor anual do IPTU</Label>
+                  <CurrencyInput id="leasefinancialstep-valor-anual-do-iptu"
                     value={value.iptu_charge.annual_amount.toString()}
                     onChange={(v) => {
                       const annual = parseFloat(v) || 0;
@@ -885,8 +885,8 @@ export function LeaseFinancialStep({
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Nº de parcelas</Label>
-                  <Input
+                  <Label htmlFor="leasefinancialstep-no-de-parcelas-2">Nº de parcelas</Label>
+                  <Input id="leasefinancialstep-no-de-parcelas-2"
                     type="number"
                     min={1}
                     max={12}
@@ -903,8 +903,8 @@ export function LeaseFinancialStep({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Valor da parcela</Label>
-                  <CurrencyInput
+                  <Label htmlFor="leasefinancialstep-valor-da-parcela-2">Valor da parcela</Label>
+                  <CurrencyInput id="leasefinancialstep-valor-da-parcela-2"
                     value={value.iptu_charge.installment_amount.toString()}
                     onChange={(v) => {
                       const installment = parseFloat(v) || 0;
@@ -919,8 +919,8 @@ export function LeaseFinancialStep({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Primeiro vencimento</Label>
-                  <Input
+                  <Label htmlFor="leasefinancialstep-primeiro-vencimento-2">Primeiro vencimento</Label>
+                  <Input id="leasefinancialstep-primeiro-vencimento-2"
                     type="date"
                     value={value.iptu_charge.first_due_date || ""}
                     onChange={(e) => updateIptu({ first_due_date: e.target.value || null })}
@@ -961,8 +961,8 @@ export function LeaseFinancialStep({
                 {cfg.enabled && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label>Valor mensal</Label>
-                      <CurrencyInput
+                      <Label htmlFor="leasefinancialstep-valor-mensal">Valor mensal</Label>
+                      <CurrencyInput id="leasefinancialstep-valor-mensal"
                         value={(cfg.installment_amount || 0).toString()}
                         onChange={(v) =>
                           updateAdditional(meta.type, {
@@ -973,8 +973,8 @@ export function LeaseFinancialStep({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Primeiro vencimento</Label>
-                      <Input
+                      <Label htmlFor="leasefinancialstep-primeiro-vencimento-3">Primeiro vencimento</Label>
+                      <Input id="leasefinancialstep-primeiro-vencimento-3"
                         type="date"
                         value={cfg.first_due_date || ""}
                         onChange={(e) =>
@@ -986,8 +986,8 @@ export function LeaseFinancialStep({
                     </div>
                     {isUncategorizedObligation(meta.type) && (
                       <div className="space-y-2 sm:col-span-2">
-                        <Label>Descrição</Label>
-                        <Input
+                        <Label htmlFor="leasefinancialstep-descricao">Descrição</Label>
+                        <Input id="leasefinancialstep-descricao"
                           value={cfg.label || ""}
                           onChange={(e) =>
                             updateAdditional(meta.type, { label: e.target.value || null })

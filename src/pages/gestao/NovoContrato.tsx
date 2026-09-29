@@ -1502,10 +1502,10 @@ export default function NovoContrato() {
               ) : (
               <>
               <div className="space-y-2">
-                <Label>Buscar Imóvel</Label>
+                <Label htmlFor="novocontrato-buscar-imovel">Buscar Imóvel</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
+                  <Input id="novocontrato-buscar-imovel"
                     placeholder="Nome ou endereço..."
                     value={unitSearchTerm}
                     onChange={(e) => setUnitSearchTerm(e.target.value)}
@@ -1586,7 +1586,7 @@ export default function NovoContrato() {
 
               {effectiveUnitId && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs sm:text-sm">Finalidade da locação</Label>
+                  <Label htmlFor="novocontrato-finalidade-da-locacao" className="text-xs sm:text-sm">Finalidade da locação</Label>
                   <Select
                     value={leasePurpose}
                     onValueChange={(v) => {
@@ -1594,7 +1594,7 @@ export default function NovoContrato() {
                       setPurposeTouched(true);
                     }}
                   >
-                    <SelectTrigger className="w-full sm:w-64">
+                    <SelectTrigger id="novocontrato-finalidade-da-locacao" className="w-full sm:w-64">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1802,8 +1802,8 @@ export default function NovoContrato() {
           {step === "guarantee" && (
             <div className="space-y-4">
               <div className="space-y-3">
-                <Label className="text-base font-semibold">Tipo de Garantia *</Label>
-                <RadioGroup
+                <Label id="novocontrato-tipo-de-garantia" className="text-base font-semibold">Tipo de Garantia *</Label>
+                <RadioGroup aria-labelledby="novocontrato-tipo-de-garantia"
                   value={formData.guarantee_type}
                   onValueChange={(v) =>
                     setFormData({ ...formData, guarantee_type: v as GuaranteeType })
@@ -1846,8 +1846,8 @@ export default function NovoContrato() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                     <div className="sm:col-span-2 space-y-1.5">
-                      <Label className="text-xs sm:text-sm">Nome Completo *</Label>
-                      <Input
+                      <Label htmlFor="novocontrato-nome-completo" className="text-xs sm:text-sm">Nome Completo *</Label>
+                      <Input id="novocontrato-nome-completo"
                         value={guarantorData.nome}
                         onChange={(e) =>
                           setGuarantorData({ ...guarantorData, nome: e.target.value })
@@ -1856,8 +1856,8 @@ export default function NovoContrato() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs sm:text-sm">CPF *</Label>
-                      <Input
+                      <Label htmlFor="novocontrato-cpf" className="text-xs sm:text-sm">CPF *</Label>
+                      <Input id="novocontrato-cpf"
                         value={guarantorData.cpf}
                         onChange={(e) => setGuarantorData({ ...guarantorData, cpf: e.target.value })}
                         placeholder="000.000.000-00"
@@ -1868,16 +1868,16 @@ export default function NovoContrato() {
                       )}
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs sm:text-sm">RG</Label>
-                      <Input
+                      <Label htmlFor="novocontrato-rg" className="text-xs sm:text-sm">RG</Label>
+                      <Input id="novocontrato-rg"
                         value={guarantorData.rg || ""}
                         onChange={(e) => setGuarantorData({ ...guarantorData, rg: e.target.value })}
                         placeholder="RG"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs sm:text-sm">Profissão</Label>
-                      <Input
+                      <Label htmlFor="novocontrato-profissao" className="text-xs sm:text-sm">Profissão</Label>
+                      <Input id="novocontrato-profissao"
                         value={guarantorData.profissao || ""}
                         onChange={(e) =>
                           setGuarantorData({ ...guarantorData, profissao: e.target.value })
@@ -1886,14 +1886,14 @@ export default function NovoContrato() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs sm:text-sm">Estado Civil *</Label>
+                      <Label htmlFor="novocontrato-estado-civil" className="text-xs sm:text-sm">Estado Civil *</Label>
                       <Select
                         value={guarantorData.estadoCivil}
                         onValueChange={(v) =>
                           setGuarantorData({ ...guarantorData, estadoCivil: v })
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger id="novocontrato-estado-civil">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1911,9 +1911,9 @@ export default function NovoContrato() {
                     <p className="text-xs sm:text-sm text-muted-foreground">Endereço do Fiador</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
                       <div className="space-y-1.5">
-                        <Label className="text-xs sm:text-sm">CEP</Label>
+                        <Label htmlFor="novocontrato-cep" className="text-xs sm:text-sm">CEP</Label>
                         <div className="relative">
-                          <Input
+                          <Input id="novocontrato-cep"
                             value={guarantorData.cep || ""}
                             onChange={(e) =>
                               setGuarantorData({ ...guarantorData, cep: formatCep(e.target.value) })
@@ -1928,8 +1928,8 @@ export default function NovoContrato() {
                         </div>
                       </div>
                       <div className="col-span-1 sm:col-span-2 space-y-1.5">
-                        <Label className="text-xs sm:text-sm">Endereço</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-endereco" className="text-xs sm:text-sm">Endereço</Label>
+                        <Input id="novocontrato-endereco"
                           value={guarantorData.endereco}
                           onChange={(e) =>
                             setGuarantorData({ ...guarantorData, endereco: e.target.value })
@@ -1940,8 +1940,8 @@ export default function NovoContrato() {
                     </div>
                     <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                       <div className="space-y-1.5">
-                        <Label className="text-xs sm:text-sm">Cidade</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-cidade" className="text-xs sm:text-sm">Cidade</Label>
+                        <Input id="novocontrato-cidade"
                           value={guarantorData.cidade}
                           onChange={(e) =>
                             setGuarantorData({ ...guarantorData, cidade: e.target.value })
@@ -1950,8 +1950,8 @@ export default function NovoContrato() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs sm:text-sm">UF</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-uf" className="text-xs sm:text-sm">UF</Label>
+                        <Input id="novocontrato-uf"
                           value={guarantorData.estado}
                           onChange={(e) =>
                             setGuarantorData({
@@ -1980,8 +1980,8 @@ export default function NovoContrato() {
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="sm:col-span-2 space-y-2">
-                          <Label>Nome do Cônjuge *</Label>
-                          <Input
+                          <Label htmlFor="novocontrato-nome-do-conjuge">Nome do Cônjuge *</Label>
+                          <Input id="novocontrato-nome-do-conjuge"
                             value={guarantorData.conjuge?.nome || ""}
                             onChange={(e) =>
                               setGuarantorData({
@@ -1997,8 +1997,8 @@ export default function NovoContrato() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>CPF do Cônjuge *</Label>
-                          <Input
+                          <Label htmlFor="novocontrato-cpf-do-conjuge">CPF do Cônjuge *</Label>
+                          <Input id="novocontrato-cpf-do-conjuge"
                             value={guarantorData.conjuge?.cpf || ""}
                             onChange={(e) =>
                               setGuarantorData({
@@ -2014,8 +2014,8 @@ export default function NovoContrato() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>RG do Cônjuge</Label>
-                          <Input
+                          <Label htmlFor="novocontrato-rg-do-conjuge">RG do Cônjuge</Label>
+                          <Input id="novocontrato-rg-do-conjuge"
                             value={guarantorData.conjuge?.rg || ""}
                             onChange={(e) =>
                               setGuarantorData({
@@ -2039,8 +2039,8 @@ export default function NovoContrato() {
                     <p className="text-sm text-muted-foreground">Imóvel em Garantia (opcional)</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="sm:col-span-2 space-y-2">
-                        <Label>Endereço do Imóvel</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-endereco-do-imovel">Endereço do Imóvel</Label>
+                        <Input id="novocontrato-endereco-do-imovel"
                           value={guarantorData.imovelGarantia?.endereco || ""}
                           onChange={(e) =>
                             setGuarantorData({
@@ -2056,8 +2056,8 @@ export default function NovoContrato() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Matrícula</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-matricula">Matrícula</Label>
+                        <Input id="novocontrato-matricula"
                           value={guarantorData.imovelGarantia?.matricula || ""}
                           onChange={(e) =>
                             setGuarantorData({
@@ -2073,8 +2073,8 @@ export default function NovoContrato() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Cartório</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-cartorio">Cartório</Label>
+                        <Input id="novocontrato-cartorio"
                           value={guarantorData.imovelGarantia?.cartorio || ""}
                           onChange={(e) =>
                             setGuarantorData({
@@ -2109,14 +2109,14 @@ export default function NovoContrato() {
               </div>
 
               <div className="space-y-3">
-                <Label>Tipo de Pagamento</Label>
+                <Label htmlFor="novocontrato-tipo-de-pagamento">Tipo de Pagamento</Label>
                 <Select
                   value={paymentInfo.tipo}
                   onValueChange={(v) =>
                     setPaymentInfo({ ...paymentInfo, tipo: v as "pix" | "banco" | "boleto" })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="novocontrato-tipo-de-pagamento">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -2129,8 +2129,8 @@ export default function NovoContrato() {
 
               {paymentInfo.tipo === "pix" && (
                 <div className="space-y-2">
-                  <Label>Chave PIX</Label>
-                  <Input
+                  <Label htmlFor="novocontrato-chave-pix">Chave PIX</Label>
+                  <Input id="novocontrato-chave-pix"
                     value={paymentInfo.chavePix || ""}
                     onChange={(e) => setPaymentInfo({ ...paymentInfo, chavePix: e.target.value })}
                     placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
@@ -2142,32 +2142,32 @@ export default function NovoContrato() {
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="sm:col-span-2 space-y-2">
-                      <Label>Banco</Label>
-                      <Input
+                      <Label htmlFor="novocontrato-banco">Banco</Label>
+                      <Input id="novocontrato-banco"
                         value={paymentInfo.banco || ""}
                         onChange={(e) => setPaymentInfo({ ...paymentInfo, banco: e.target.value })}
                         placeholder="Nome do banco"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Agência</Label>
-                      <Input
+                      <Label htmlFor="novocontrato-agencia">Agência</Label>
+                      <Input id="novocontrato-agencia"
                         value={paymentInfo.agencia || ""}
                         onChange={(e) => setPaymentInfo({ ...paymentInfo, agencia: e.target.value })}
                         placeholder="0000"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Conta</Label>
-                      <Input
+                      <Label htmlFor="novocontrato-conta">Conta</Label>
+                      <Input id="novocontrato-conta"
                         value={paymentInfo.conta || ""}
                         onChange={(e) => setPaymentInfo({ ...paymentInfo, conta: e.target.value })}
                         placeholder="00000-0"
                       />
                     </div>
                     <div className="sm:col-span-2 space-y-2">
-                      <Label>Titular</Label>
-                      <Input
+                      <Label htmlFor="novocontrato-titular">Titular</Label>
+                      <Input id="novocontrato-titular"
                         value={paymentInfo.titular || ""}
                         onChange={(e) => setPaymentInfo({ ...paymentInfo, titular: e.target.value })}
                         placeholder="Nome do titular da conta"
@@ -2216,8 +2216,8 @@ export default function NovoContrato() {
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Configurações de Cobrança</p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-xs">Multa por atraso (%)</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-multa-por-atraso" className="text-xs">Multa por atraso (%)</Label>
+                        <Input id="novocontrato-multa-por-atraso"
                           type="number"
                           min={0}
                           max={10}
@@ -2228,8 +2228,8 @@ export default function NovoContrato() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs">Juros ao mês (%)</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-juros-ao-mes" className="text-xs">Juros ao mês (%)</Label>
+                        <Input id="novocontrato-juros-ao-mes"
                           type="number"
                           min={0}
                           max={5}
@@ -2240,8 +2240,8 @@ export default function NovoContrato() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs">Desconto (R$)</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-desconto-r" className="text-xs">Desconto (R$)</Label>
+                        <Input id="novocontrato-desconto-r"
                           type="number"
                           min={0}
                           step={0.01}
@@ -2253,8 +2253,8 @@ export default function NovoContrato() {
                     </div>
                     {(paymentInfo.discount_value ?? 0) > 0 && (
                       <div className="space-y-1">
-                        <Label className="text-xs">Dias antes do vencimento para desconto</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-dias-antes-do-vencimento-para-desconto" className="text-xs">Dias antes do vencimento para desconto</Label>
+                        <Input id="novocontrato-dias-antes-do-vencimento-para-desconto"
                           type="number"
                           min={1}
                           max={30}
@@ -2368,8 +2368,8 @@ export default function NovoContrato() {
               </div>
 
               <div className="space-y-2">
-                <Label>Nome do Contato *</Label>
-                <Input
+                <Label htmlFor="novocontrato-nome-do-contato">Nome do Contato *</Label>
+                <Input id="novocontrato-nome-do-contato"
                   value={billingContact.name}
                   onChange={(e) => setBillingContact((p) => ({ ...p, name: e.target.value }))}
                   placeholder="Nome do responsável pelo pagamento"
@@ -2380,8 +2380,8 @@ export default function NovoContrato() {
               </div>
 
               <div className="space-y-2">
-                <Label>E-mail para Cobrança</Label>
-                <Input
+                <Label htmlFor="novocontrato-e-mail-para-cobranca">E-mail para Cobrança</Label>
+                <Input id="novocontrato-e-mail-para-cobranca"
                   type="email"
                   value={billingContact.email}
                   onChange={(e) => setBillingContact((p) => ({ ...p, email: e.target.value }))}
@@ -2393,8 +2393,8 @@ export default function NovoContrato() {
               </div>
 
               <div className="space-y-2">
-                <Label>Contato de WhatsApp</Label>
-                <ContactSelector
+                <Label id="novocontrato-contato-de-whatsapp">Contato de WhatsApp</Label>
+                <ContactSelector aria-labelledby="novocontrato-contato-de-whatsapp"
                   value={billingContact.contact_id || null}
                   onChange={(id) => setBillingContact((p) => ({ ...p, contact_id: id || "" }))}
                   placeholder="Selecione o contato para mensagens de cobrança"
@@ -2460,8 +2460,8 @@ export default function NovoContrato() {
               </div>
 
               <div className="space-y-2">
-                <Label>Observações</Label>
-                <Textarea
+                <Label htmlFor="novocontrato-observacoes">Observações</Label>
+                <Textarea id="novocontrato-observacoes"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Anotações sobre o contrato..."
