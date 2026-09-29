@@ -990,7 +990,6 @@ const Pipeline = () => {
       <Button
         className="fixed bottom-24 right-4 z-50 rounded-full shadow-lg md:hidden h-14 w-14"
         size="icon"
-        aria-label="Ir para adicionar etapa"
         onClick={() => {
           const el = kanbanScrollRef.current;
           if (el) {

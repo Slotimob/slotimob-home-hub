@@ -301,7 +301,6 @@ export function TransactionCard({
               onClick={handleReconcileClick}
               disabled={isReconciling}
               title={transaction.is_reconciled ? "Conciliado" : "Pendente de conciliar"}
-              aria-label={transaction.is_reconciled ? "Conciliado" : "Pendente de conciliar"}
             >
               {isReconciling ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
