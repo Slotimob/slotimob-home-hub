@@ -197,7 +197,7 @@ export const DealClosingDialog = ({
 
       // Success messages
       const messages: string[] = [];
-      if (shouldUpdatePropertyStatus && deal.unit?.id) {
+      if (effectiveUpdateStatus && deal.unit?.id) {
         messages.push(`Imóvel marcado como ${statusLabel.toLowerCase()}`);
       }
       if (shouldCreateTransaction && saleValue > 0) {

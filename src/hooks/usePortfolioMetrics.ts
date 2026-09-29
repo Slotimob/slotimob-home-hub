@@ -1,3 +1,4 @@
+import { unitAvailability } from '@/lib/unit-availability';
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -51,7 +52,7 @@ export function usePortfolioMetrics() {
       // Fetch all units with relevant fields including intent_type for proper filtering
       const { data: units, error: unitsError } = await supabase
         .from('units')
-        .select('id, status, market_value, rent_price, is_managed, is_occupied, intent_type');
+        .select('id, status, market_value, rent_price, is_managed, is_occupied, intent_type, has_subdivisions, unit_subdivisions(status, tenant_contact_id)');
 
       if (unitsError) throw unitsError;
 
@@ -107,16 +108,26 @@ export function usePortfolioMetrics() {
       );
       
       // A unit is considered vacant when its status is explicitly 'available' (not relying on is_occupied flag)
-      const vacantUnits = rentalManagedAssets.filter(
-        u => u.status === 'available'
+      // W19: imóvel com frações parcialmente alugado conta como vago proporcional às frações livres
+      // (o banco marca o imóvel inteiro como 'rented' se qualquer fração tem inquilino).
+      const avail = new Map(
+        rentalManagedAssets.map((u: any) => [u.id, unitAvailability(u, u.unit_subdivisions)]),
       );
+      const vacancyWeight = (u: any): number => {
+        const a = avail.get(u.id)!;
+        if (a.kind === 'partial') return a.total > 0 ? a.freeCount / a.total : 0;
+        if (u.has_subdivisions && a.kind === 'available') return 1;
+        return u.status === 'available' ? 1 : 0;
+      };
+      const vacantUnits = rentalManagedAssets.filter((u) => vacancyWeight(u) > 0);
       const occupiedUnits = rentalManagedAssets.filter(
-        u => u.is_occupied === true || u.status === 'rented'
+        (u: any) => avail.get(u.id)!.kind !== 'available' && (u.is_occupied === true || u.status === 'rented')
       );
 
-      // Vacancy Rate = (Vacant / Total Rental Managed) * 100
+      // Vacancy Rate = (Σ peso vago / Total Rental Managed) * 100
+      const vacantWeightSum = rentalManagedAssets.reduce((sum, u) => sum + vacancyWeight(u), 0);
       const vacancyRate = rentalManagedAssets.length > 0
-        ? (vacantUnits.length / rentalManagedAssets.length) * 100
+        ? (vacantWeightSum / rentalManagedAssets.length) * 100
         : 0;
 
       // Informational counts (no impact on existing formulas)
