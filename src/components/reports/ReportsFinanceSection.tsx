@@ -11,6 +11,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchLeaseLateFeeRates, leaseIdOfTransaction, describeLateFeeRule } from '@/lib/lease-late-fees';
 import { generateReportPdf, formatCurrency, formatDate, calculatePenaltyAndInterest } from '@/utils/reportPdfGenerator';
 import { generateReportCsv, cleanNumericValue, cleanDateValue } from '@/utils/reportCsvGenerator';
 import { downloadReportDocx, downloadReportExcel } from '@/utils/reportMultiFormat';
@@ -176,6 +177,17 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
   const handleFluxoCaixaExcel = async () => setCashflowConfigOpen('excel');
 
   // === Inadimplência helpers ===
+  // REP1: multa e juros conforme o contrato de cada lançamento (sem contrato: 2% + 1% a.m.)
+  const computeOverdueRows = async (rows: any[]) => {
+    const rates = await fetchLeaseLateFeeRates(rows.map((t) => leaseIdOfTransaction(t)).filter(Boolean) as string[]);
+    return rows.map((t) => {
+      const daysOverdue = (parseDateOnly(t.due_date!) ? differenceInDays(startOfDay(new Date()), startOfDay(parseDateOnly(t.due_date!)!)) : 0);
+      const leaseId = leaseIdOfTransaction(t);
+      const r = leaseId ? rates.get(leaseId) ?? null : null;
+      const { penalty, interest, total } = calculatePenaltyAndInterest(t.amount, daysOverdue, r);
+      return { t, daysOverdue, penalty, interest, total, rule: describeLateFeeRule(r) };
+    });
+  };
   const buildInadimplenciaData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Usuário não autenticado');
@@ -183,14 +195,13 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
       .eq('broker_id', user.id).eq('type', 'income').eq('status', 'pending').lt('due_date', todayDateOnly()).order('due_date', { ascending: true });
     if (selectedUnitId) query = query.eq('unit_id', selectedUnitId);
     const { data: overdue } = await query;
+    const computed = await computeOverdueRows(overdue || []);
     let totalOriginal = 0, totalPenalty = 0, totalInterest = 0, totalUpdated = 0;
-    const tableData = (overdue || []).map(t => {
-      const daysOverdue = (parseDateOnly(t.due_date!) ? differenceInDays(startOfDay(new Date()), startOfDay(parseDateOnly(t.due_date!)!)) : 0);
-      const { penalty, interest, total } = calculatePenaltyAndInterest(t.amount, daysOverdue);
+    const tableData = computed.map(({ t, daysOverdue, penalty, interest, total, rule }) => {
       totalOriginal += t.amount; totalPenalty += penalty; totalInterest += interest; totalUpdated += total;
-      return [formatDate(t.due_date!), t.contact?.name || '-', t.unit?.unit_number || '-', formatCurrency(t.amount), daysOverdue.toString(), formatCurrency(penalty + interest), formatCurrency(total)];
+      return [formatDate(t.due_date!), t.contact?.name || '-', t.unit?.unit_number || '-', formatCurrency(t.amount), daysOverdue.toString(), formatCurrency(penalty + interest), formatCurrency(total), rule];
     });
-    const columns = ['Vencimento', 'Contato', 'Unidade', 'Valor Original', 'Dias Atraso', 'Multa/Juros', 'Valor Atualizado'];
+    const columns = ['Vencimento', 'Contato', 'Unidade', 'Valor Original', 'Dias Atraso', 'Multa/Juros', 'Valor Atualizado', 'Regra'];
     const summary = [
       { label: 'Total Original em Atraso', value: formatCurrency(totalOriginal) },
       { label: 'Total Multas e Juros', value: formatCurrency(totalPenalty + totalInterest) },
@@ -204,9 +215,9 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
     try {
       const { tableData, columns, summary, totalOriginal, totalPenalty, totalInterest, totalUpdated } = await buildInadimplenciaData();
       await generateReportPdf({
-        title: 'Inadimplência Analítica', subtitle: selectedUnitId ? 'Histórico de atrasos da unidade' : 'Recebíveis em atraso com cálculo de multa e juros (2% + 1% a.m.)',
+        title: 'Inadimplência Analítica', subtitle: selectedUnitId ? 'Histórico de atrasos da unidade' : 'Recebíveis em atraso com multa e juros conforme o contrato (sem contrato: 2% + 1% a.m.)',
         userName, dateRange, columns, data: tableData, filename: 'inadimplencia-analitica', landscape: true,
-        footerTotals: ['TOTAIS', '', '', formatCurrency(totalOriginal), '', formatCurrency(totalPenalty + totalInterest), formatCurrency(totalUpdated)],
+        footerTotals: ['TOTAIS', '', '', formatCurrency(totalOriginal), '', formatCurrency(totalPenalty + totalInterest), formatCurrency(totalUpdated), ''],
         summary,
       });
       toast({ title: 'PDF gerado com sucesso!' });
@@ -222,11 +233,9 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
       if (selectedUnitId) query = query.eq('unit_id', selectedUnitId);
       const { data: overdue } = await query;
       generateReportCsv({
-        columns: ['Vencimento', 'Descrição', 'Unidade', 'Contato', 'Valor Original', 'Dias Atraso', 'Multa', 'Juros', 'Valor Atualizado'],
-        data: (overdue || []).map(t => {
-          const daysOverdue = (parseDateOnly(t.due_date!) ? differenceInDays(startOfDay(new Date()), startOfDay(parseDateOnly(t.due_date!)!)) : 0);
-          const { penalty, interest, total } = calculatePenaltyAndInterest(t.amount, daysOverdue);
-          return [cleanDateValue(t.due_date), t.description, t.unit?.unit_number || '', t.contact?.name || '', cleanNumericValue(t.amount), daysOverdue, cleanNumericValue(penalty), cleanNumericValue(interest), cleanNumericValue(total)];
+        columns: ['Vencimento', 'Descrição', 'Unidade', 'Contato', 'Valor Original', 'Dias Atraso', 'Multa', 'Juros', 'Valor Atualizado', 'Regra'],
+        data: (await computeOverdueRows(overdue || [])).map(({ t, daysOverdue, penalty, interest, total, rule }) => {
+          return [cleanDateValue(t.due_date), t.description, t.unit?.unit_number || '', t.contact?.name || '', cleanNumericValue(t.amount), daysOverdue, cleanNumericValue(penalty), cleanNumericValue(interest), cleanNumericValue(total), rule];
         }),
         filename: 'inadimplencia-analitica',
       });
@@ -419,7 +428,7 @@ export const ReportsFinanceSection = ({ dateRange, userName, selectedUnitId }: R
       />
       <ReportRow
         title="Inadimplência Analítica"
-        description="Atrasos com cálculo de multa (2%) e juros (1% a.m. pro-rata) e valor atualizado."
+        description="Atrasos com multa e juros conforme o contrato (sem contrato: 2% + 1% a.m. pro-rata) e valor atualizado."
         icon={<AlertTriangle className="h-4 w-4" />}
         onGeneratePDF={handleInadimplenciaPdf}
         onDownloadCSV={handleInadimplenciaCsv}
