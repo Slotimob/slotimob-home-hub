@@ -792,6 +792,11 @@ export function TransactionsTableInfinite({
                         {transaction.group_id && (
                           <Repeat className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
                         )}
+{(transaction as any).via_lease_share_percent != null && (
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 shrink-0 font-normal" title="Lançamento de contrato com vários imóveis; o valor mostrado é o cheio.">
+                            via contrato (rateio {Number((transaction as any).via_lease_share_percent).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%)
+                          </Badge>
+                        )}
                         {groupBadgeFor(transaction) && (
                           <Badge variant="outline" className="text-[9px] px-1 py-0 shrink-0 font-normal">
                             {groupBadgeFor(transaction)}

@@ -541,6 +541,31 @@ const AlugueiDetalhe = () => {
     queryClient.invalidateQueries({ queryKey: ["asset-health"] });
   };
 
+  // Frações sem contrato vivo (o usuário escolhe qual no assistente)
+  const { data: freeFractions } = useQuery({
+    queryKey: ["unit-free-fractions", unitId],
+    enabled: !!unitId && !!unitData?.has_subdivisions,
+    queryFn: async () => {
+      const { data: subs } = await supabase.from("unit_subdivisions").select("id").eq("unit_id", unitId!);
+      const { data: leases } = await supabase
+        .from("leases")
+        .select("unit_subdivision_id, lease_units(unit_subdivision_id)")
+        .or(await leaseUnitFilter(unitId!))
+        .in("status", ["active", "pending"]);
+      const taken = new Set<string>();
+      for (const l of (leases as any[]) || []) {
+        if (l.unit_subdivision_id) taken.add(l.unit_subdivision_id);
+        for (const r of l.lease_units || []) if (r.unit_subdivision_id) taken.add(r.unit_subdivision_id);
+      }
+      return (subs || []).filter((s) => !taken.has(s.id)).length;
+    },
+  });
+
+  const handleRentFreeFraction = () => {
+    if (!unitId) return;
+    navigate(`/gestao/contratos/novo?unitId=${unitId}`);
+  };
+
   const handleCreateLease = () => {
     if (!unitId) return;
     const params = new URLSearchParams();
@@ -662,14 +687,15 @@ const AlugueiDetalhe = () => {
                   <Receipt className="h-4 w-4 mr-1.5" />
                   Lançamentos
                 </Button>
-                {canCreate && (
+                {/* S2: com contrato da unidade inteira não há nova locação; com frações livres, alugar fração */}
+                {canCreate && !activeLease && (!unitData?.has_subdivisions || (freeFractions ?? 0) > 0) && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleCreateLease}
+                    onClick={unitData?.has_subdivisions ? handleRentFreeFraction : handleCreateLease}
                   >
                     <Plus className="h-4 w-4 mr-1.5" />
-                    Nova Locação
+                    {unitData?.has_subdivisions ? "Alugar fração livre" : "Nova Locação"}
                   </Button>
                 )}
               </div>
