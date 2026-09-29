@@ -6,6 +6,20 @@ export type PlatformPaymentResultData =
   | { type: 'pix'; pix: { encodedImage: string; payload: string; expirationDate?: string }; url?: string }
   | { type: 'redirect'; url: string };
 
+export function normalizePlatformPaymentResult(data: unknown): PlatformPaymentResultData | null {
+  if (!data || typeof data !== 'object') return null;
+  const d = data as { type?: unknown; url?: unknown; pix?: { encodedImage?: unknown } | null };
+  const url = typeof d.url === 'string' && d.url ? d.url : undefined;
+  if (d.type === 'pix') {
+    if (d.pix && typeof d.pix.encodedImage === 'string' && d.pix.encodedImage) {
+      return data as PlatformPaymentResultData;
+    }
+    return url ? { type: 'redirect', url } : null;
+  }
+  if (d.type === 'redirect' && url) return data as PlatformPaymentResultData;
+  return null;
+}
+
 interface PlatformPaymentResultProps {
   result: PlatformPaymentResultData;
   title?: string;
