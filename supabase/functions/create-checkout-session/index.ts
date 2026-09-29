@@ -22,15 +22,45 @@ async function asaasRequest(path: string, method = "GET", body?: unknown) {
   if (!res.ok) {
     const errMsg = data?.errors?.[0]?.description || `Asaas API error ${res.status}`;
     console.error("[Asaas]", path, errMsg, JSON.stringify(data));
-    throw new Error(errMsg);
+    throw new AsaasApiError(errMsg);
   }
   return data;
 }
 
-function nextDueDateStr(daysAhead = 1): string {
-  const d = new Date();
-  d.setDate(d.getDate() + daysAhead);
-  return d.toISOString().split("T")[0];
+class AsaasApiError extends Error {}
+
+const JSON_HEADERS = { ...corsHeaders, "Content-Type": "application/json" };
+function jsonResp(body: unknown) {
+  return new Response(JSON.stringify(body), { status: 200, headers: JSON_HEADERS });
+}
+
+/** Hoje em America/Sao_Paulo, YYYY-MM-DD. */
+function todayBR(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+}
+
+/** 1º pagamento de uma assinatura (até 5 tentativas, 1,5s entre elas). */
+async function firstSubscriptionPayment(subId: string, pendingOnly = false): Promise<any | null> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const paymentsData = await asaasRequest(`/subscriptions/${subId}/payments`);
+      const list = paymentsData?.data ?? [];
+      const found = pendingOnly
+        ? list.find((p: any) => p?.status === "PENDING" || p?.status === "OVERDUE")
+        : list[0];
+      if (found) return found;
+      if (pendingOnly) return null;
+    } catch (e) {
+      console.warn("[create-checkout-session] falha ao buscar pagamentos da assinatura:", e instanceof Error ? e.message : e);
+    }
+    if (attempt < 4) await new Promise(r => setTimeout(r, 1500));
+  }
+  return null;
+}
+
+async function pixFor(paymentId: string) {
+  const pixData = await asaasRequest(`/payments/${paymentId}/pixQrCode`);
+  return { encodedImage: pixData.encodedImage, payload: pixData.payload, expirationDate: pixData.expirationDate };
 }
 
 async function deleteAsaasSubscription(id: string): Promise<boolean> {
@@ -139,6 +169,15 @@ serve(async (req) => {
     const { product_type, plan_id, billing_cycle, billing_type, addon_id, credit_pack_id } = body;
     console.log("[checkout] body recebido:", JSON.stringify({ product_type, plan_id, billing_cycle, billing_type }));
 
+    // Só PIX ou cartão de crédito (ausente → PIX)
+    const billingType: "PIX" | "CREDIT_CARD" | null =
+      billing_type === undefined || billing_type === null || billing_type === ""
+        ? "PIX"
+        : billing_type === "PIX" || billing_type === "CREDIT_CARD" ? billing_type : null;
+    if (!billingType) {
+      return jsonResp({ error: "Forma de pagamento indisponível. Use PIX ou cartão de crédito." });
+    }
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("full_name, email, phone, cpf, cnpj")
@@ -221,17 +260,8 @@ serve(async (req) => {
       }
 
       const planName = plan_id.charAt(0).toUpperCase() + plan_id.slice(1);
-      const asaasBillingType = billing_type || "BOLETO";
+      const asaasBillingType = billingType;
       console.log("[checkout] billing_type recebido:", billing_type, "→ usando:", asaasBillingType);
-
-      if (asaasBillingType === "BOLETO") {
-        const cpfCnpjRaw = (profile as any)?.cpf || (profile as any)?.cnpj;
-        if (!cpfCnpjRaw) {
-          return new Response(JSON.stringify({
-            error: "Para boleto bancário, CPF ou CNPJ é obrigatório. Preencha seus dados fiscais e tente novamente."
-          }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        }
-      }
       // ── Troca de plano (qualquer direção): cancelar subscription Asaas anterior ──
       const isPlanChange = !!subscription?.asaas_subscription_id && subscription?.plan_id !== plan_id;
 
@@ -288,17 +318,6 @@ serve(async (req) => {
                   },
                 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
               }
-              if (asaasBillingType === "BOLETO") {
-                return new Response(JSON.stringify({
-                  type: "boleto",
-                  reused: true,
-                  boleto: {
-                    bankSlipUrl: firstExisting.bankSlipUrl,
-                    barCode: firstExisting.barCode ?? null,
-                    dueDate: firstExisting.dueDate,
-                  },
-                }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-              }
               const reusedUrl = firstExisting.invoiceUrl || `https://www.asaas.com/i/${firstExisting.id}`;
               return new Response(JSON.stringify({ type: "redirect", reused: true, url: reusedUrl }), {
                 headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -320,7 +339,7 @@ serve(async (req) => {
         && !!periodEnd && !isNaN(periodEnd.getTime()) && periodEnd.getTime() > Date.now();
       const upgradeDueDate = useCurrentPeriodEnd
         ? periodEnd!.toISOString().split("T")[0]
-        : nextDueDateStr(1);
+        : todayBR();
 
       // ── Limpeza de assinaturas órfãs de plano deste cliente na Asaas ──
       try {
@@ -395,29 +414,6 @@ serve(async (req) => {
         }
       }
 
-      // BOLETO: buscar bankSlipUrl inline
-      if (asaasBillingType === "BOLETO") {
-        let firstPayment: any = null;
-        for (let attempt = 0; attempt < 5; attempt++) {
-          const paymentsData = await asaasRequest(`/subscriptions/${sub.id}/payments`);
-          if (paymentsData?.data?.length > 0) {
-            firstPayment = paymentsData.data[0];
-            break;
-          }
-          if (attempt < 4) await new Promise(r => setTimeout(r, 1500));
-        }
-        if (firstPayment) {
-          return new Response(JSON.stringify({
-            type: "boleto",
-            boleto: {
-              bankSlipUrl: firstPayment.bankSlipUrl,
-              barCode: firstPayment.barCode ?? null,
-              dueDate: firstPayment.dueDate,
-            },
-          }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        }
-      }
-
       // CREDIT_CARD ou fallback:
       // a URL correta é a do PAGAMENTO (/i/{paymentId}), nunca montada com o id da assinatura.
       let invoiceUrl: string | null = null;
@@ -477,30 +473,68 @@ serve(async (req) => {
       }
 
       const extRef = `${userId}:addon:${addon_id}:qty${quantity}`;
-      const sub = await asaasRequest("/subscriptions", "POST", {
-        customer: asaasCustomerId,
-        billingType: "UNDEFINED",
-        value: Number(addon.price) * quantity,
-        nextDueDate: nextDueDateStr(1),
-        cycle: "MONTHLY",
-        description: `Slotimob Add-on: ${addon.name}`,
-        externalReference: extRef,
-      });
 
-      await supabase
-        .from("asaas_addon_subscriptions")
-        .insert({
-          broker_id: userId,
-          addon_id: addon.id,
-          asaas_subscription_id: sub.id,
-          quantity: quantity,
-          status: "pending",
+      // Idempotência: reaproveita assinatura ACTIVE do cliente com o mesmo externalReference
+      let sub: any = null;
+      let reused = false;
+      try {
+        const existingSubs = await asaasRequest(
+          `/subscriptions?customer=${asaasCustomerId}&externalReference=${encodeURIComponent(extRef)}&status=ACTIVE&limit=10`
+        );
+        const match = (existingSubs?.data ?? []).find(
+          (s: any) => s?.externalReference === extRef && !s?.deleted && s?.status === "ACTIVE"
+        );
+        if (match) {
+          const pending = await firstSubscriptionPayment(match.id, true);
+          if (pending) {
+            console.log(`[create-checkout-session] reaproveitando add-on ${match.id} (pagamento ${pending.id})`);
+            if (match.billingType !== billingType) {
+              await asaasRequest(`/payments/${pending.id}`, "PUT", { billingType }).catch((e) =>
+                console.warn("[create-checkout-session] falha ao trocar forma do pagamento reaproveitado:", e instanceof Error ? e.message : e)
+              );
+            }
+            sub = match;
+            reused = true;
+            const url = pending.invoiceUrl || `https://www.asaas.com/i/${pending.id}`;
+            const pix = billingType === "PIX" ? await pixFor(pending.id) : undefined;
+            return jsonResp({ type: billingType === "PIX" ? "pix" : "redirect", reused: true, url, ...(pix ? { pix } : {}) });
+          }
+        }
+      } catch (lookupErr) {
+        console.warn("[create-checkout-session] falha ao procurar add-on existente:", lookupErr instanceof Error ? lookupErr.message : lookupErr);
+      }
+
+      if (!reused) {
+        sub = await asaasRequest("/subscriptions", "POST", {
+          customer: asaasCustomerId,
+          billingType,
+          value: Number(addon.price) * quantity,
+          nextDueDate: todayBR(),
+          cycle: "MONTHLY",
+          description: `Slotimob Add-on: ${addon.name}`,
+          externalReference: extRef,
         });
 
-      const invoiceUrl = sub.invoiceUrl || `https://www.asaas.com/s/${sub.id}`;
-      return new Response(JSON.stringify({ url: invoiceUrl }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+        await supabase
+          .from("asaas_addon_subscriptions")
+          .insert({
+            broker_id: userId,
+            addon_id: addon.id,
+            asaas_subscription_id: sub.id,
+            quantity: quantity,
+            status: "pending",
+          });
+      }
+
+      const firstPayment = await firstSubscriptionPayment(sub.id);
+      if (!firstPayment) {
+        return jsonResp({
+          error: "A cobrança foi criada, mas o link de pagamento ainda não está disponível. Aguarde alguns segundos e tente novamente.",
+        });
+      }
+      const invoiceUrl = firstPayment.invoiceUrl || `https://www.asaas.com/i/${firstPayment.id}`;
+      const pix = billingType === "PIX" ? await pixFor(firstPayment.id) : undefined;
+      return jsonResp({ type: billingType === "PIX" ? "pix" : "redirect", url: invoiceUrl, ...(pix ? { pix } : {}) });
     }
 
     // ─── AI CREDITS ───────────────────────────────────────────────────────
@@ -528,17 +562,16 @@ serve(async (req) => {
       const extRef = `${userId}:ai_credits:${pack.credits_amount}`;
       const payment = await asaasRequest("/payments", "POST", {
         customer: asaasCustomerId,
-        billingType: "UNDEFINED",
+        billingType,
         value: Number(pack.price),
-        dueDate: nextDueDateStr(1),
+        dueDate: todayBR(),
         description: `Slotimob IA: ${pack.name}`,
         externalReference: extRef,
       });
 
-      const invoiceUrl = payment.invoiceUrl || payment.bankSlipUrl || `https://www.asaas.com/i/${payment.id}`;
-      return new Response(JSON.stringify({ url: invoiceUrl }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const invoiceUrl = payment.invoiceUrl || `https://www.asaas.com/i/${payment.id}`;
+      const pix = billingType === "PIX" ? await pixFor(payment.id) : undefined;
+      return jsonResp({ type: billingType === "PIX" ? "pix" : "redirect", url: invoiceUrl, ...(pix ? { pix } : {}) });
     }
 
     return new Response(JSON.stringify({ error: `product_type inválido: ${product_type}` }), {
@@ -549,6 +582,9 @@ serve(async (req) => {
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error("[create-checkout-session]", errMsg, err);
+    if (err instanceof AsaasApiError && /cpf|cnpj/i.test(errMsg)) {
+      return jsonResp({ error: "cpf_cnpj_obrigatorio", message: "Informe seu CPF ou CNPJ para gerar o pagamento." });
+    }
     return new Response(
       JSON.stringify({ error: "Não foi possível processar o pagamento. Tente novamente." }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
