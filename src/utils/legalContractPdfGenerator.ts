@@ -1,5 +1,5 @@
 import type jsPDF from 'jspdf';
-import { buildSpecialConditionsClauses, buildRenewalClause, type ContractSpecialConditions } from '@/lib/lease-contract-clauses';
+import { buildSpecialConditionsClauses, buildRenewalClause, documentTypeOf, type ContractSpecialConditions } from '@/lib/lease-contract-clauses';
 import { resolveLeasePurpose, leaseTermMonths } from '@/lib/lease-purpose';
 import { pdfSafeText, pdfSafeLabel } from '@/utils/pdfSafeText';
 
@@ -715,6 +715,7 @@ export const generateLegalContractPDF = async (data: LegalContractData, fileName
       abatimentos: data.contrato.abatimentos,
       retencaoIrrf: data.contrato.retencaoIrrf,
       rateio: data.contrato.rateio,
+      locatarioTipoDocumento: documentTypeOf(data.locatario.cnpj, data.locatario.cpf),
     },
     data.contrato.dataInicio
   ).forEach((text, idx) => addSubClause(`3.${5 + idx}`, text));

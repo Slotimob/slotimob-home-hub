@@ -1079,6 +1079,7 @@ export default function NovoContrato() {
           }
           return hasBasicInfo;
         }
+        if (formData.guarantee_type === "caucao") return Number(formData.deposit_amount) > 0;
         return true;
       case "payment":
         return true;
@@ -1897,6 +1898,7 @@ export default function NovoContrato() {
                 name: ownerContactInfo?.name || editLease?.owner?.name || null,
               }}
               adjustmentLocked={isEditMode}
+              tenantDocument={(selectedTenant as any)?.document_number || (editLease as any)?.tenant?.document_number || null}
             />
           )}
 
@@ -1934,6 +1936,24 @@ export default function NovoContrato() {
                   ))}
                 </RadioGroup>
               </div>
+
+              {formData.guarantee_type === "caucao" && (
+                <div className="space-y-2 pt-3 border-t sm:max-w-xs">
+                  <Label htmlFor="novocontrato-valor-caucao">Valor da caução *</Label>
+                  <CurrencyInput
+                    id="novocontrato-valor-caucao"
+                    value={String(formData.deposit_amount || 0)}
+                    onChange={(v) => setFormData((prev) => ({ ...prev, deposit_amount: parseFloat(v) || 0 }))}
+                    placeholder="R$ 0,00"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    até 3 meses de aluguel: {formatCurrencyBRL((Number(formData.rent_amount) || 0) * 3)}
+                  </p>
+                  {!(Number(formData.deposit_amount) > 0) && (
+                    <p className="text-xs text-destructive">Informe o valor da caução.</p>
+                  )}
+                </div>
+              )}
 
               {formData.guarantee_type === "fiador" && (
                 <div className="space-y-4 pt-3 border-t">

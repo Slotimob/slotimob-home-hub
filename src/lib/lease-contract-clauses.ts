@@ -6,6 +6,18 @@ export interface ContractSpecialConditions {
   abatimentos?: RentDeductionConfig[] | null;
   retencaoIrrf?: RentWithholdingConfig | null;
   rateio?: { imovel: string; percentual: number }[] | null;
+  /** Tipo de documento do LOCATÁRIO: a retenção de IRRF só entra com CNPJ. */
+  locatarioTipoDocumento?: "CPF" | "CNPJ" | null;
+}
+
+/** "CPF" | "CNPJ" pelos dígitos (11 ou 14); senão null. */
+export function documentTypeOf(...docs: (string | null | undefined)[]): "CPF" | "CNPJ" | null {
+  for (const d of docs) {
+    const n = (d || "").replace(/\D/g, "").length;
+    if (n === 14) return "CNPJ";
+    if (n === 11) return "CPF";
+  }
+  return null;
 }
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -34,7 +46,7 @@ export function buildSpecialConditionsClauses(c: ContractSpecialConditions, star
   }
 
   const w = c.retencaoIrrf;
-  if (w?.enabled) {
+  if (w?.enabled && c.locatarioTipoDocumento === "CNPJ") {
     const forma =
       w.mode === "percent" ? `${Number(w.percent || 0).toLocaleString("pt-BR")}%`
       : w.mode === "fixed" ? `${brl(Number(w.fixed_amount || 0))} por mês`
