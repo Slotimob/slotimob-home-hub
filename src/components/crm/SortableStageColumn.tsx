@@ -123,12 +123,12 @@ export const SortableStageColumn = ({
     <div 
       ref={setSortableRef} 
       style={style} 
-      className="flex-shrink-0 w-64 sm:w-72 md:w-76 snap-start"
+      className="flex-shrink-0 w-64 sm:w-72 md:w-76 snap-start h-full"
     >
-      <div ref={setDroppableRef}>
+      <div ref={setDroppableRef} className="h-full">
         <Card 
           className={cn(
-            "h-full min-h-[calc(100vh-260px)] transition-all bg-muted/30 flex flex-col",
+            "h-full min-h-0 transition-all bg-muted/30 flex flex-col",
             isOver && !isDraggingStage && 'ring-2 ring-primary bg-muted/50',
             isDragging && 'shadow-lg',
           )}

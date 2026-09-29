@@ -119,6 +119,20 @@ const Pipeline = () => {
   const [isReorderDialogOpen, setIsReorderDialogOpen] = useState(false);
 
   const kanbanScrollRef = useRef<HTMLDivElement | null>(null);
+  // CRM10: o kanban ocupa a altura que sobra da janela; só as colunas rolam por dentro
+  const [kanbanHeight, setKanbanHeight] = useState<number | null>(null);
+  useEffect(() => {
+    const measure = () => {
+      const el = kanbanScrollRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      setKanbanHeight(Math.max(260, window.innerHeight - top - 12));
+    };
+    measure();
+    const t = window.setTimeout(measure, 300);
+    window.addEventListener('resize', measure);
+    return () => { window.clearTimeout(t); window.removeEventListener('resize', measure); };
+  });
   const [showScrollRight, setShowScrollRight] = useState(true);
   const [showScrollLeft, setShowScrollLeft] = useState(false);
   const isMobile = useIsMobile();
@@ -863,13 +877,13 @@ const Pipeline = () => {
           
           <div
             ref={kanbanScrollRef}
-            className="w-full min-w-0 overflow-x-scroll overflow-y-hidden h-[calc(100vh-16rem)] pb-4 touch-pan-x overscroll-x-contain pipeline-scrollbar cursor-grab px-6 snap-x snap-proximity md:snap-none"
+            className="w-full min-w-0 overflow-x-scroll overflow-y-hidden h-[calc(100dvh-16rem)] pb-4 touch-pan-x overscroll-x-contain pipeline-scrollbar cursor-grab px-6 snap-x snap-proximity md:snap-none"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={endPointerDrag}
             onPointerCancel={endPointerDrag}
             onPointerLeave={endPointerDrag}
-            style={{ WebkitOverflowScrolling: 'touch' }}
+            style={{ WebkitOverflowScrolling: 'touch', ...(kanbanHeight ? { height: kanbanHeight } : {}) }}
           >
             <div className="min-w-max px-2 py-3 select-none pr-8 md:pr-2 h-full">
             <DndContext

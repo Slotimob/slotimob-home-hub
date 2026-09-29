@@ -116,7 +116,11 @@ export const CreateCommissionDialog = ({
               {deal.lead?.name || 'Lead'}
             </p>
             <p className="text-xs text-muted-foreground">
-              {deal.property?.name || 'Sem imóvel'}{deal.unit ? ` - Unid. ${deal.unit.unit_number}` : ''}
+              {deal.property?.name
+                ? `${deal.property.name}${deal.unit ? ` - Unid. ${deal.unit.unit_number}` : ''}`
+                : deal.unit
+                  ? [deal.unit.unit_number, (deal.unit as any).address].filter(Boolean).join(' · ')
+                  : 'Sem imóvel'}
             </p>
           </div>
 

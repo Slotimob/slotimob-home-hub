@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useCustomPipelines } from '@/hooks/useCustomPipelines';
 import { useAuth } from '@/hooks/useAuth';
 import { AgentSelector } from '@/components/shared/AgentSelector';
@@ -76,6 +76,26 @@ interface UnitOption {
   property_name: string | null;
   city: string | null;
   price: number | null;
+  rent_price: number | null;
+  status: string | null;
+  /** Frações livres (imóvel subdividido), para Locação. */
+  free_fractions: { label: string; rent_price: number | null }[];
+}
+
+/** CRM2: tipo mais frequente nas negociações do funil; sem histórico, pelo nome do funil. */
+export function defaultBusinessType(types: (string | null)[], pipelineName: string): 'sale' | 'rental' {
+  let sale = 0, rental = 0;
+  for (const t of types) { if (t === 'sale') sale++; else if (t === 'rental') rental++; }
+  if (sale || rental) return rental > sale ? 'rental' : 'sale';
+  return /alug|loca/i.test(pipelineName || '') ? 'rental' : 'sale';
+}
+
+/** CRM4: valor sugerido do negócio pelo tipo. */
+export function suggestedDealValue(unit: UnitOption | undefined, type: 'sale' | 'rental'): number | null {
+  if (!unit) return null;
+  if (type === 'sale') return unit.price ?? null;
+  if (unit.free_fractions.length === 1 && unit.free_fractions[0].rent_price != null) return unit.free_fractions[0].rent_price;
+  return unit.rent_price ?? null;
 }
 
 interface CreateDealDialogProps {
@@ -103,6 +123,10 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
   const [dateOpen, setDateOpen] = useState(false);
   const [assignedUserId, setAssignedUserId] = useState<string>('');
   const [selectedPipeline, setSelectedPipeline] = useState(pipelineType);
+  const businessTypeTouched = useRef(false);
+  const valueTouched = useRef(false);
+  const [inlineLeadId, setInlineLeadId] = useState<string | null>(null);
+  const selectedPipelineName = pipelines.find(p => p.pipeline_key === selectedPipeline)?.name || '';
 
   const PIPELINE_OPTIONS = pipelines.map(p => ({
     value: p.pipeline_key,
@@ -138,6 +162,9 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
       setNewLeadData({ name: '', email: '', phone: '', origin: '' });
       setLeadSearch('');
       setUnitSearch('');
+      businessTypeTouched.current = false;
+      valueTouched.current = false;
+      setInlineLeadId(null);
       setFormData({
         lead_id: '',
         unit_id: '',
@@ -154,15 +181,31 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
     }
   }, [open]);
 
-  // Auto-fill estimated value when unit is selected
+  useEffect(() => { if (open) setSelectedPipeline(pipelineType); }, [open, pipelineType]);
+
+  // CRM2: tipo padrão pelo funil (enquanto o usuário não escolher manualmente)
   useEffect(() => {
-    if (formData.unit_id) {
-      const selectedUnit = units.find(u => u.id === formData.unit_id);
-      if (selectedUnit?.price && !formData.estimated_value) {
-        setFormData(prev => ({ ...prev, estimated_value: selectedUnit.price?.toString() || '' }));
-      }
-    }
-  }, [formData.unit_id, units]);
+    if (!open || !selectedPipeline) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('deals')
+        .select('business_type')
+        .eq('pipeline_type', selectedPipeline)
+        .limit(500);
+      if (cancelled || businessTypeTouched.current) return;
+      const type = defaultBusinessType((data || []).map((d: any) => d.business_type), selectedPipelineName);
+      setFormData(prev => ({ ...prev, business_type: type }));
+    })();
+    return () => { cancelled = true; };
+  }, [open, selectedPipeline, selectedPipelineName]);
+
+  // CRM4: valor sugerido pelo imóvel e tipo (enquanto o usuário não digitar)
+  useEffect(() => {
+    if (valueTouched.current || !formData.unit_id) return;
+    const v = suggestedDealValue(units.find(u => u.id === formData.unit_id), formData.business_type);
+    setFormData(prev => ({ ...prev, estimated_value: v != null ? String(v) : '' }));
+  }, [formData.unit_id, formData.business_type, units]);
 
   const loadLeads = async () => {
     const { data } = await supabase.from('leads').select('id, name, email, phone, origin').order('name');
@@ -170,27 +213,37 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
   };
 
   const loadUnits = async () => {
-    const { data } = await supabase
-      .from('units')
-      .select(`
-        id,
-        unit_number,
-        is_standalone,
-        city,
-        price,
-        property:properties(name)
-      `)
+    // CRM3: imóveis subdivididos com fração livre também entram (para Locação)
+    const { data: freeSubs } = await supabase
+      .from('unit_subdivisions')
+      .select('unit_id, label, rent_price')
       .eq('status', 'available')
-      .order('unit_number');
+      .order('label');
+    const fractionsByUnit = new Map<string, { label: string; rent_price: number | null }[]>();
+    for (const f of freeSubs || []) {
+      const list = fractionsByUnit.get(f.unit_id) || [];
+      list.push({ label: f.label, rent_price: f.rent_price });
+      fractionsByUnit.set(f.unit_id, list);
+    }
+    const fractionUnitIds = Array.from(fractionsByUnit.keys());
+    const select = `id, unit_number, is_standalone, city, price, rent_price, status, has_subdivisions, property:properties(name)`;
+    let query = supabase.from('units').select(select);
+    query = fractionUnitIds.length
+      ? query.or(`status.eq.available,and(has_subdivisions.eq.true,id.in.(${fractionUnitIds.join(',')}))`)
+      : query.eq('status', 'available');
+    const { data } = await query.order('unit_number');
 
     if (data) {
-      setUnits(data.map(unit => ({
+      setUnits((data as any[]).map(unit => ({
         id: unit.id,
         unit_number: unit.unit_number,
         is_standalone: unit.is_standalone || false,
         property_name: unit.property?.name || null,
         city: unit.city,
         price: unit.price,
+        rent_price: unit.rent_price,
+        status: unit.status,
+        free_fractions: unit.has_subdivisions ? fractionsByUnit.get(unit.id) || [] : [],
       })));
     }
   };
@@ -206,7 +259,10 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
   }, [leads, leadSearch]);
 
   const filteredUnits = useMemo(() => {
-    let filtered = units;
+    // Venda: só imóveis disponíveis; Locação: também subdivididos com fração livre
+    let filtered = formData.business_type === 'rental'
+      ? units
+      : units.filter(u => u.status === 'available');
     
     // Filter by type
     if (unitType === 'units') {
@@ -226,7 +282,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
     }
 
     return filtered;
-  }, [units, unitSearch, unitType]);
+  }, [units, unitSearch, unitType, formData.business_type]);
 
   const selectedLead = leads.find(l => l.id === formData.lead_id);
   const selectedUnit = units.find(u => u.id === formData.unit_id);
@@ -257,7 +313,8 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
       });
 
       setLeads((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
-      setFormData((prev) => ({ ...prev, lead_id: data.id }));
+      setFormData((prev) => ({ ...prev, lead_id: data.id, lead_origin: newLeadData.origin || prev.lead_origin }));
+      setInlineLeadId(data.id);
       setShowNewLeadForm(false);
       setNewLeadData({ name: '', email: '', phone: '', origin: '' });
     } catch (error: any) {
@@ -390,7 +447,11 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
         <DialogHeader>
           <DialogTitle>Nova Negociação</DialogTitle>
-          <DialogDescription>Adicione uma nova negociação ao pipeline de vendas</DialogDescription>
+          <DialogDescription>
+            {selectedPipelineName
+              ? `Adicione uma nova negociação ao funil "${selectedPipelineName}"`
+              : 'Adicione uma nova negociação ao funil'}
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -599,7 +660,8 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
               </Popover>
             </div>
 
-            {/* Lead Origin - shown when an existing lead is selected */}
+            {/* Lead Origin - some quando o lead foi criado aqui (a origem já veio do cadastro) */}
+            {!showNewLeadForm && !(inlineLeadId && formData.lead_id === inlineLeadId) && (
             <div className="space-y-2">
               <Label>Origem do Lead</Label>
               <Select
@@ -618,6 +680,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
                 </SelectContent>
               </Select>
             </div>
+            )}
           </div>
 
           <Separator />
@@ -637,7 +700,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
                   type="button"
                   variant={formData.business_type === 'sale' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setFormData(prev => ({ ...prev, business_type: 'sale' }))}
+                  onClick={() => { businessTypeTouched.current = true; setFormData(prev => ({ ...prev, business_type: 'sale' })); }}
                   className="flex-1"
                 >
                   Venda
@@ -646,7 +709,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
                   type="button"
                   variant={formData.business_type === 'rental' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setFormData(prev => ({ ...prev, business_type: 'rental' }))}
+                  onClick={() => { businessTypeTouched.current = true; setFormData(prev => ({ ...prev, business_type: 'rental' })); }}
                   className="flex-1"
                 >
                   Locação
@@ -768,6 +831,11 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
                                   {unit.property_name || (unit.is_standalone ? 'Imóvel Avulso' : '')}
                                   {unit.city && ` • ${unit.city}`}
                                 </span>
+                                {formData.business_type === 'rental' && unit.free_fractions.length > 0 && (
+                                  <span className="text-xs text-muted-foreground">
+                                    frações livres: {unit.free_fractions.map(f => f.label).join(', ')}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </CommandItem>
@@ -796,7 +864,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
                 <CurrencyInput
                   id="estimated_value"
                   value={formData.estimated_value}
-                  onChange={(value) => setFormData({ ...formData, estimated_value: value })}
+                  onChange={(value) => { valueTouched.current = true; setFormData({ ...formData, estimated_value: value }); }}
                   placeholder="0,00"
                 />
               </div>
