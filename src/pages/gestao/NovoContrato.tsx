@@ -89,7 +89,9 @@ import { useCepSearch } from "@/hooks/useCepSearch";
 import { useUnsavedChangesGuard } from "@/lib/unsaved-changes-guard";
 import { useUnitSubdivisions } from "@/hooks/useUnitSubdivisions";
 import { supabase } from "@/integrations/supabase/client";
-import { parseDateOnly } from "@/lib/date-only";
+import { parseDateOnly, formatDateOnly } from "@/lib/date-only";
+import { formatCurrencyBRL } from "@/utils/unitPricing";
+import { graceSummary } from "@/lib/lease-special-conditions";
 import {
   ConfirmLeaseProjectionDialog,
   type LeaseForProjection,
