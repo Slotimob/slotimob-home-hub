@@ -1352,6 +1352,7 @@ export function AssetDetailDialog({
 
       {/* Contract Generator Dialog */}
       {asset && (
+        <>
         <ConfirmLeaseProjectionDialog
           open={projectionOpen}
           onOpenChange={setProjectionOpen}
@@ -1363,6 +1364,7 @@ export function AssetDetailDialog({
           onOpenChange={setContractDialogOpen}
           unitId={asset.unitId}
         />
+        </>
       )}
 
     </div>
