@@ -10,6 +10,7 @@ import {
 } from '@/components/asaas/AsaasFinancialSeal';
 import {
   Loader2,
+  CheckCircle2,
   Check,
   Zap,
   Rocket,
