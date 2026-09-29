@@ -277,7 +277,7 @@ const Training = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <Progress value={overallProgress} className="h-3" />
+              <Progress value={overallProgress} className="h-3" aria-label="Progresso geral do treinamento" />
               <p className="text-sm text-muted-foreground mt-2">
                 {overallProgress.toFixed(0)}% concluído
               </p>

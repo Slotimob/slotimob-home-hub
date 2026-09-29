@@ -172,6 +172,7 @@ export const SortableStageColumn = ({
                 <div className="flex items-center gap-1">
                   {deals.length > 0 && (
                     <Checkbox
+                      aria-label={`Selecionar todos da etapa ${title}`}
                       checked={selectionMode && allSelected}
                       onCheckedChange={(checked) => {
                         if (!selectionMode && onToggleSelectionMode) {
@@ -248,7 +249,7 @@ export const SortableStageColumn = ({
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent data-card-scroll className="space-y-2 flex-1 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent px-3 py-3">
+          <CardContent data-card-scroll tabIndex={0} role="region" aria-label={`Negociações da etapa ${title}`} className="space-y-2 flex-1 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent px-3 py-3">
             {deals.map((deal) => (
               <DealCard
                 key={deal.id}

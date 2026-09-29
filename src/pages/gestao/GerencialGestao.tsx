@@ -304,13 +304,14 @@ const GerencialGestao = () => {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar por descrição ou unidade..."
+                aria-label="Buscar por descrição ou unidade"
                 className="pl-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-36 h-9"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-36 h-9" aria-label="Filtrar por status"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="paid">Pagos</SelectItem>
