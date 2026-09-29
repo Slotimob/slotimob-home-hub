@@ -642,9 +642,6 @@ export default function NovoContrato() {
       setStep("unit");
       return;
     }
-    if (wholeUnitBusy && free.length === 1) {
-      // imóvel inteiro ocupado: não há fração livre de fato — o aviso do 1.1 aparece
-    }
     if (anyBusy && free.length === 1) {
       const f = free[0];
       setFormData((prev) => ({
