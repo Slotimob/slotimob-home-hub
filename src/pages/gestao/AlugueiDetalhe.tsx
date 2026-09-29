@@ -1,3 +1,4 @@
+import { useSettlementGroups, useRentBalanceLines, collectRentMonthLines, rentMonthSummary, compositionKindOf } from "@/lib/settlement-group";
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { format, addMonths, startOfMonth, parseISO } from "date-fns";
@@ -318,7 +319,7 @@ const AlugueiDetalhe = () => {
       const { data, error } = await supabase
         .from("financial_transactions")
         .select(
-          `id, amount, status, transaction_date, description, obligation_type, competency_period, is_reconciled, lease_id, reference, category:financial_categories(name)`
+          `id, type, amount, status, transaction_date, paid_date, metadata, settlement_group_id, description, obligation_type, competency_period, is_reconciled, lease_id, reference, category:financial_categories(name)`
         )
         .eq("unit_id", unitId)
         .or(
@@ -375,6 +376,30 @@ const AlugueiDetalhe = () => {
 
   const { data: customObligationTypes } = useCustomObligationTypes();
 
+  // O2: resumo do mês do aluguel com grupo + saldos (mesmo cálculo do popover de lançamentos)
+  const rentAnchorTx: any = useMemo(() => {
+    if (isAdditionalUnit) return null;
+    const rents = (monthTransactions as any[]).filter(
+      (t) => t.type === "income" && t.competency_period === competencyPeriod &&
+        (!t.obligation_type || t.obligation_type === "rent") && t.status !== "cancelled"
+    );
+    return rents[0] ?? null;
+  }, [monthTransactions, competencyPeriod, isAdditionalUnit]);
+  const { data: rentGroups = {} } = useSettlementGroups([rentAnchorTx?.settlement_group_id]);
+  const { data: rentBalances = {} } = useRentBalanceLines([rentAnchorTx?.id]);
+  const rentMonth = useMemo(() => {
+    if (!rentAnchorTx) return null;
+    const group = rentAnchorTx.settlement_group_id ? rentGroups[rentAnchorTx.settlement_group_id] || [] : [];
+    const extra = rentBalances[rentAnchorTx.id] || [];
+    if (group.length < 2 && extra.length === 0) return null;
+    const lines = collectRentMonthLines(rentAnchorTx, group, extra);
+    const summary = rentMonthSummary(rentAnchorTx, lines);
+    const lateFee = lines
+      .filter((l) => l.status !== "cancelled" && compositionKindOf(l) === "late_fee")
+      .reduce((a, l) => a + (Number(l.amount) || 0), 0);
+    return { summary, lateFee, balanceLines: lines.filter((l) => l.obligation_type === "rent_balance") };
+  }, [rentAnchorTx, rentGroups, rentBalances]);
+
   const monthlyObligations = useMemo((): MonthlyObligation[] => {
     if (!unitConfig) return [];
     const fixedTypes = Object.keys(OBLIGATION_LABELS) as ObligationType[];
@@ -412,7 +437,8 @@ const AlugueiDetalhe = () => {
         let status: ObligationStatus = calculateObligationStatus(
           config,
           (transaction as any) ?? null,
-          currentMonth
+          currentMonth,
+          (activeLease as any)?.start_date ?? null
         );
 
         let net: MonthlyObligation["net"] = null;
@@ -938,7 +964,38 @@ const AlugueiDetalhe = () => {
                                     {obligation.viaLease}
                                   </p>
                                 )}
-                                {obligation.net && (
+                                {obligation.type === "rent" && rentMonth ? (
+                                  <div className="text-xs text-muted-foreground mt-0.5 break-words space-y-0.5">
+                                    <p>
+                                      Líquido do mês:{" "}
+                                      <span className="font-medium text-foreground">
+                                        {formatCurrencyBRL(rentMonth.summary.net)}
+                                      </span>{" "}
+                                      (aluguel {formatCurrencyBRL(rentMonth.summary.rent)}
+                                      {rentMonth.lateFee > 0 && <> + multa {formatCurrencyBRL(rentMonth.lateFee)}</>}
+                                      {rentMonth.summary.additions - rentMonth.lateFee > 0.004 && (
+                                        <> + acréscimos {formatCurrencyBRL(rentMonth.summary.additions - rentMonth.lateFee)}</>
+                                      )}
+                                      {rentMonth.summary.deductions > 0 && <> − abatimentos {formatCurrencyBRL(rentMonth.summary.deductions)}</>}
+                                      {rentMonth.summary.irrf > 0 && <> − IRRF {formatCurrencyBRL(rentMonth.summary.irrf)}</>}
+                                      {rentMonth.summary.discounts > 0 && <> − descontos {formatCurrencyBRL(rentMonth.summary.discounts)}</>})
+                                    </p>
+                                    {rentMonth.summary.receipts.map((r) => (
+                                      <p key={r.date}>
+                                        Recebido {r.date ? format(parseISO(r.date), "dd/MM/yyyy") : "sem data"}:{" "}
+                                        {formatCurrencyBRL(r.amount)}
+                                      </p>
+                                    ))}
+                                    {rentMonth.balanceLines.map((l) => (
+                                      <p key={l.id}>
+                                        Saldo {l.status === "paid" ? "pago" : "em aberto"}: {formatCurrencyBRL(Number(l.amount) || 0)}
+                                      </p>
+                                    ))}
+                                    {rentMonth.summary.openBalance > 0.004 && (
+                                      <p>Em aberto: {formatCurrencyBRL(rentMonth.summary.openBalance)}</p>
+                                    )}
+                                  </div>
+                                ) : obligation.net && (
                                   <p className="text-xs text-muted-foreground mt-0.5 break-words">
                                     Líquido esperado:{" "}
                                     <span className="font-medium text-foreground">
