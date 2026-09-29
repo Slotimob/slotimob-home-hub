@@ -223,7 +223,7 @@ export default function DocumentTemplateEditor() {
 
   if (!template) {
     return (
-      <AppLayout>
+      <AppLayout title="Editor de Modelo">
         <div className="p-8 text-center space-y-4">
           <p className="text-muted-foreground">Modelo não encontrado.</p>
           <Button variant="outline" onClick={() => navigate('/documents/templates')}>
@@ -361,14 +361,14 @@ export default function DocumentTemplateEditor() {
   );
 
   return (
-    <AppLayout>
+    <AppLayout title="Editor de Modelo">
       <div className="flex flex-col h-[calc(100vh-8rem)] min-h-0">
         <div className="flex items-center gap-3 px-1 pb-3 shrink-0">
           <Button variant="ghost" size="sm" onClick={() => navigate('/documents/templates')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <FileText className="h-5 w-5 text-primary shrink-0" />
-          <h1 className="text-base sm:text-lg font-semibold truncate">{template.name}</h1>
+          <h2 className="text-base sm:text-lg font-semibold truncate">{template.name}</h2>
         </div>
 
         {isMobile ? (

@@ -12,10 +12,10 @@ export default function Manutencoes() {
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <h1 className="text-xl font-bold flex items-center gap-2">
+            <h2 className="text-xl font-bold flex items-center gap-2">
               <Wrench className="h-5 w-5" />
               Manutenções
-            </h1>
+            </h2>
             <p className="text-sm text-muted-foreground">
               Registre e acompanhe manutenções, vistorias, reformas e demais atividades dos imóveis.
             </p>

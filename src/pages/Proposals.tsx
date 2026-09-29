@@ -244,10 +244,10 @@ export default function Proposals() {
               {/* Header */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold flex items-center gap-2">
+                  <h2 className="text-2xl font-bold flex items-center gap-2">
                     <FileText className="h-6 w-6 text-primary" />
                     Propostas Comerciais
-                  </h1>
+                  </h2>
                   <p className="text-muted-foreground text-sm mt-1">
                     Gere e gerencie propostas premium para seus clientes.
                   </p>

@@ -19,7 +19,7 @@ const ContratosEmGestao = () => {
 
   if (loading) {
     return (
-      <AppLayout>
+      <AppLayout title="Contratos">
         <div className="flex items-center justify-center h-[50vh]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -46,7 +46,7 @@ const ContratosEmGestao = () => {
       <AppLayout title="Contratos" titleExtra={<HelpTooltip featureKey="management.contracts" />}>
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Contratos</h1>
+            <h2 className="text-2xl font-bold tracking-tight">Contratos</h2>
             <p className="text-muted-foreground">
               Gerencie contratos de locação, reajustes e assinaturas
             </p>

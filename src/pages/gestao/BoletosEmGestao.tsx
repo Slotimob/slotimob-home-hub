@@ -232,10 +232,10 @@ export default function BoletosEmGestao() {
 
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-xl font-semibold flex items-center gap-2">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
             <Receipt className="h-5 w-5 text-primary" />
             Boletos e Cobranças
-          </h1>
+          </h2>
           <p className="text-sm text-muted-foreground mt-0.5">Gerencie as cobranças automáticas via Asaas</p>
         </div>
         {canCreate && (

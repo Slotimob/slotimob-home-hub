@@ -50,16 +50,16 @@ export default function FinanceBanks() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <AppLayout>
+      <AppLayout title="Bancos">
         <div className="space-y-4 sm:space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-1">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-1.5">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-1.5">
                 <Landmark className="h-5 w-5 sm:h-6 sm:w-6" />
                 Bancos
                 <HelpTooltip featureKey="finance.bank_accounts" />
-              </h1>
+              </h2>
               <p className="text-xs sm:text-sm text-muted-foreground">
                 Gerencie todas as contas bancárias e acompanhe saldos reais vs projetados
               </p>

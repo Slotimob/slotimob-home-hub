@@ -264,7 +264,7 @@ const GerencialGestao = () => {
       <AppLayout title="Gerencial">
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Controle Gerencial</h1>
+            <h2 className="text-2xl font-bold tracking-tight">Controle Gerencial</h2>
             <p className="text-muted-foreground">
               Acompanhe as obrigações e pagamentos de imóveis (água, luz, condomínio) que não afetam o DRE/Caixa da imobiliária
             </p>

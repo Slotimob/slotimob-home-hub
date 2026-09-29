@@ -1427,14 +1427,14 @@ export default function NovoContrato() {
           Contratos
         </Button>
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold truncate flex items-center gap-2">
+          <h2 className="text-xl font-semibold truncate flex items-center gap-2">
             {isPendingSetup ? "Finalizar Contrato" : isEditMode ? "Editar Contrato" : "Novo Contrato"}
             {dealIdParam && (
               <span className="text-[10px] font-medium rounded-full border border-border bg-muted px-2 py-0.5 text-muted-foreground">
                 Vindo do CRM
               </span>
             )}
-          </h1>
+          </h2>
           {unitName && (
             <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
               <Building2 className="h-3 w-3" />

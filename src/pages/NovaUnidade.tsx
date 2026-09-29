@@ -110,7 +110,7 @@ export default function NovaUnidade({ standalone = false }: NovaUnidadeProps) {
     : 'Cadastre uma nova unidade para o empreendimento';
 
   return (
-    <AppLayout>
+    <AppLayout title="Nova Unidade">
       <SEOHead title={title} description={subtitle} noIndex />
 
       <div className="max-w-4xl mx-auto space-y-6">
@@ -124,10 +124,10 @@ export default function NovaUnidade({ standalone = false }: NovaUnidadeProps) {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
               <Building2 className="h-5 w-5" />
               {title}
-            </h1>
+            </h2>
             <p className="text-sm text-muted-foreground">{subtitle}</p>
           </div>
         </div>

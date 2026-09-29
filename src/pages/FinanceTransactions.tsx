@@ -221,7 +221,7 @@ const FinanceTransactions = () => {
 
   if (loading) {
     return (
-      <AppLayout>
+      <AppLayout title="Lançamentos">
         <div className="flex items-center justify-center h-[50vh]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -238,12 +238,12 @@ const FinanceTransactions = () => {
   }
 
   return (
-    <AppLayout>
+    <AppLayout title="Lançamentos">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-1.5">Lançamentos <HelpTooltip featureKey="finance.transactions" /></h1>
+            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-1.5">Lançamentos <HelpTooltip featureKey="finance.transactions" /></h2>
             <p className="text-muted-foreground">Gerencie suas receitas e despesas</p>
           </div>
           <div className="flex flex-wrap gap-2">

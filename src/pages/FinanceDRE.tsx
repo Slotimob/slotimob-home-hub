@@ -164,13 +164,13 @@ export default function FinanceDRE() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout title="DRE">
       <div className="container max-w-3xl mx-auto py-6 px-4 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
             <FileSpreadsheet className="h-8 w-8 text-primary" />
             <div>
-              <h1 className="text-2xl font-bold flex items-center gap-1.5">DRE <HelpTooltip featureKey="finance.dre" /></h1>
+              <h2 className="text-2xl font-bold flex items-center gap-1.5">DRE <HelpTooltip featureKey="finance.dre" /></h2>
               <p className="text-muted-foreground">
                 Demonstrativo do Resultado do Exercício
               </p>

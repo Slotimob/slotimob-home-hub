@@ -111,6 +111,7 @@ const Dashboard = () => {
 
   return (
     <AppLayout
+      title="Dashboard"
       headerActions={
         <>
           <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>

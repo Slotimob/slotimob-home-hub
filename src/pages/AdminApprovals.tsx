@@ -37,7 +37,7 @@ export default function AdminApprovals() {
     <AppLayout title="Aprovações">
       <div className="container mx-auto py-6 px-4 max-w-6xl space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Aprovações</h1>
+          <h2 className="text-2xl font-bold">Aprovações</h2>
           <p className="text-muted-foreground">
             Gerencie solicitações de ações em massa da sua equipe
           </p>

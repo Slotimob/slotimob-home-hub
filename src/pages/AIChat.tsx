@@ -249,7 +249,7 @@ export default function AIChat() {
             <Sparkles className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-foreground">Chat IA</h1>
+            <h2 className="text-lg font-semibold text-foreground">Chat IA</h2>
             <p className="text-xs text-muted-foreground">Assistente imobiliário inteligente</p>
           </div>
         </div>
@@ -318,7 +318,7 @@ export default function AIChat() {
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
-                      h1: ({ children }) => <h1 className="text-lg font-bold mt-3 mb-1">{children}</h1>,
+                      h1: ({ children }) => <h2 className="text-lg font-bold mt-3 mb-1">{children}</h2>,
                       h2: ({ children }) => <h2 className="text-base font-semibold mt-2.5 mb-1">{children}</h2>,
                       h3: ({ children }) => <h3 className="text-sm font-semibold mt-2 mb-0.5">{children}</h3>,
                       p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
@@ -490,7 +490,7 @@ export default function AIChat() {
   );
 
   return (
-    <AppLayout>
+    <AppLayout title="Chat IA">
       <FeatureGate feature="ai_chat" requiredPlan="pro">
         {gatedContent}
       </FeatureGate>

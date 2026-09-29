@@ -155,7 +155,7 @@ const FinanceReconciliation = () => {
 
   if (loading) {
     return (
-      <AppLayout>
+      <AppLayout title="Conciliação Bancária">
         <div className="flex items-center justify-center h-[50vh]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -172,14 +172,14 @@ const FinanceReconciliation = () => {
   }
 
   return (
-    <AppLayout>
+    <AppLayout title="Conciliação Bancária">
       <div className="h-[calc(100vh-4rem)] overflow-y-auto">
         <div className="space-y-4 p-2 sm:p-4 max-w-7xl mx-auto">
           {/* Compact Header */}
           <div className="flex flex-col gap-2">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
-                <h1 className="text-lg sm:text-xl font-bold tracking-tight flex items-center gap-1.5">Conciliação Bancária <HelpTooltip featureKey="finance.reconciliation" /></h1>
+                <h2 className="text-lg sm:text-xl font-bold tracking-tight flex items-center gap-1.5">Conciliação Bancária <HelpTooltip featureKey="finance.reconciliation" /></h2>
                 <p className="text-xs text-muted-foreground">Vincule extratos aos lançamentos</p>
               </div>
 
