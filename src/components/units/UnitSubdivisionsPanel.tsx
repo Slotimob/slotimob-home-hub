@@ -272,7 +272,7 @@ export function UnitSubdivisionsPanel({ unitId }: UnitSubdivisionsPanelProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Label</TableHead>
+                <TableHead>Fração</TableHead>
                 <TableHead>Área (m²)</TableHead>
                 <TableHead>Aluguel</TableHead>
                 <TableHead>Inquilino</TableHead>

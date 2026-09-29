@@ -217,7 +217,7 @@ const AtivosEmGestao = () => {
   return (
     <>
       <SEOHead
-        title="Aluguéis - Gestão"
+        title="Gestão de Aluguéis"
         description="Monitore a saúde operacional dos seus imóveis em tempo real"
         path="/gestao/alugueis"
         noIndex={true}
@@ -227,7 +227,7 @@ const AtivosEmGestao = () => {
           {/* Header */}
            <div className="flex items-center justify-between flex-wrap gap-2">
              <div>
-               <h2 className="text-2xl font-bold tracking-tight">Gestão de Ativos</h2>
+               <h2 className="text-2xl font-bold tracking-tight">Gestão de Aluguéis</h2>
                <p className="text-muted-foreground">
                  Monitore a saúde operacional dos seus imóveis em tempo real
                </p>

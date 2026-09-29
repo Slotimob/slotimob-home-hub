@@ -35,7 +35,14 @@ export function SubdivisionSetupAlert({
   actionLabel = 'Cadastrar frações',
   className,
 }: SubdivisionSetupAlertProps) {
-  if (total > 0 && missing === 0) return null;
+  // U2: com frações já cadastradas, só uma dica discreta (sem botão duplicado)
+  if (total > 0) {
+    return (
+      <p className={`text-xs text-muted-foreground ${className ?? ''}`}>
+        Para alugar uma fração, crie o contrato pelo assistente e escolha a fração no passo Imóvel.
+      </p>
+    );
+  }
 
 
   return (

@@ -831,7 +831,9 @@ export function TransactionsTableInfinite({
                       </div>
                     </TableCell>
                     <TableCell className="px-2 py-1.5 text-xs text-muted-foreground hidden md:table-cell">
-                      {transaction.unit?.unit_number || "-"}
+                      {transaction.unit?.unit_number
+                        ? `${transaction.unit.unit_number}${(transaction as any).lease?.subdivision?.label ? ` · ${(transaction as any).lease.subdivision.label}` : ""}`
+                        : "-"}
                     </TableCell>
                     <TableCell className="px-2 py-1.5 hidden lg:table-cell">
                       {transaction.category ? (
@@ -874,7 +876,9 @@ export function TransactionsTableInfinite({
                               onClick={(e) => e.stopPropagation()}
                               className="block text-[10px] text-muted-foreground hover:underline tabular-nums"
                             >
-                              líquido {formatCurrency(b.net)}
+                              {(b as any).openBalance > 0.004
+                                ? `recebido ${formatCurrency(b.net - (b as any).openBalance)} de ${formatCurrency(b.net)}`
+                                : `líquido ${formatCurrency(b.net)}`}
                             </button>
                           </SettlementBreakdownPopover>
                         ) : null;

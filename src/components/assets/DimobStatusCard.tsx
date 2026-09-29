@@ -1,5 +1,5 @@
 import { leaseUnitFilter } from '@/hooks/useLeases';
-import { isValidCpfCnpj } from "@/lib/document-validation";
+import { isValidCpfCnpj, formatCpfCnpj } from "@/lib/document-validation";
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -160,7 +160,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
             label: 'Documento do Proprietário',
             status: hasValidDoc ? 'ok' : 'pending',
             message: hasValidDoc 
-              ? `${owner.name} - ${owner.document_type || 'CPF'}: ${owner.document_number}` 
+              ? `${owner.name} - ${owner.document_type || 'CPF'}: ${formatCpfCnpj(owner.document_number)}` 
               : docFilled
                 ? `${owner.name} - CPF/CNPJ inválido`
                 : `${owner.name} - CPF/CNPJ não cadastrado`,
@@ -246,7 +246,7 @@ export const DimobStatusCard = ({ unitId, onEditUnit, onCreateLease, canEdit = t
               label: 'Documento do Inquilino',
               status: hasValidDoc ? 'ok' : 'pending',
               message: hasValidDoc 
-                ? `${tenant.name} - ${tenant.document_type || 'CPF'}: ${tenant.document_number}` 
+                ? `${tenant.name} - ${tenant.document_type || 'CPF'}: ${formatCpfCnpj(tenant.document_number)}` 
                 : docFilled
                 ? `${tenant.name} - CPF/CNPJ inválido`
                 : `${tenant.name} - CPF/CNPJ não cadastrado`,
