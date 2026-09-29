@@ -339,11 +339,11 @@ function AddonsSection() {
 /* ─── FAQ ─── */
 function PricingFaq() {
   const faqs = [
-    { q: 'Posso mudar de plano depois?', a: 'Sim. Você pode fazer upgrade ou downgrade a qualquer momento. No upgrade, a diferença de valor é cobrada proporcionalmente.' },
+    { q: 'Posso mudar de plano depois?', a: 'Sim. Você troca de plano quando quiser em Configurações › Assinatura. O novo plano vale na hora e o novo valor passa a ser cobrado na próxima renovação.' },
     { q: 'Quais formas de pagamento são aceitas?', a: 'PIX ou cartão de crédito, processados pelo Asaas, parceiro financeiro homologado pelo Banco Central. A 1ª cobrança vence no dia da contratação e as seguintes seguem o ciclo do plano: todo mês no mensal ou todo ano no anual.' },
     { q: 'O plano anual tem desconto?', a: 'No plano anual você tem 15% de desconto sobre o valor de 12 mensalidades, pago de uma vez.' },
-    { q: 'Os add-ons são cobrados junto com a assinatura?', a: 'Sim. Os add-ons são cobrados mensalmente e cancelados individualmente a qualquer momento, sem afetar o plano principal.' },
-    { q: 'Como funciona o período de 7 dias grátis?', a: 'Ao assinar qualquer plano pago, você tem 7 dias com acesso ao Pro sem cobrança. Após o período, a cobrança normal do plano escolhido se inicia.' },
+    { q: 'Os add-ons são cobrados junto com a assinatura?', a: 'Não. Cada add-on é uma assinatura mensal separada, com cobrança própria por PIX ou cartão, e pode ser cancelado a qualquer momento sem afetar o plano principal.' },
+    { q: 'Como funciona o período de 7 dias grátis?', a: 'O teste de 7 dias vem com o plano Start: você cria a conta grátis, sem cartão, e usa os recursos do Pro por 7 dias. Depois a conta segue no Start (até 5 imóveis) e você assina um plano pago quando quiser. Nos planos pagos, a 1ª cobrança vence no dia da contratação.' },
   ];
   return (
     <section className="py-14 md:py-20">

@@ -30,7 +30,8 @@ import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { Rocket, Clock, Crown } from 'lucide-react';
 import { BuyAICreditsDialog } from './BuyAICreditsDialog';
-import { useAddonCheckout } from '@/hooks/useAddonCheckout';
+import type { AddonId } from '@/hooks/useAddonCheckout';
+import { AddonPurchaseDialog } from '@/components/checkout/AddonPurchaseDialog';
 import { CancelSubscriptionDialog } from './CancelSubscriptionDialog';
 
 const planLabels: Record<string, string> = {
@@ -60,7 +61,8 @@ export const SubscriptionManagement = () => {
   const [addonUnitQty, setAddonUnitQty] = useState(1);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const navigate = useNavigate();
-  const { buyAddon, loadingAddonId } = useAddonCheckout();
+  const [addonDialog, setAddonDialog] = useState<{ addonId: AddonId; quantity: number; label: string; priceLabel: string } | null>(null);
+  const loadingAddonId = null;
 
 
   if (isLoading) {
@@ -307,7 +309,7 @@ export const SubscriptionManagement = () => {
                 <Button
                   size="sm"
                   disabled={!!loadingAction || !!loadingAddonId}
-                  onClick={() => buyAddon('extra-user', addonUserQty)}
+                  onClick={() => setAddonDialog({ addonId: 'extra-user', quantity: addonUserQty, label: '+1 Usuário Adicional', priceLabel: 'R$ 49,90/mês cada' })}
                 >
                   {loadingAddonId === 'extra-user' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -350,7 +352,7 @@ export const SubscriptionManagement = () => {
                 <Button
                   size="sm"
                   disabled={!!loadingAction || !!loadingAddonId}
-                  onClick={() => buyAddon('extra-units-50', addonUnitQty)}
+                  onClick={() => setAddonDialog({ addonId: 'extra-units-50', quantity: addonUnitQty, label: 'Pack de Unidades (+50)', priceLabel: 'R$ 39,90/mês cada' })}
                 >
                   {loadingAddonId === 'extra-units-50' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -457,6 +459,16 @@ export const SubscriptionManagement = () => {
       />
 
       <BuyAICreditsDialog open={showCreditsDialog} onOpenChange={setShowCreditsDialog} />
+      {addonDialog && (
+        <AddonPurchaseDialog
+          open={!!addonDialog}
+          onOpenChange={(o) => { if (!o) setAddonDialog(null); }}
+          addonId={addonDialog.addonId}
+          quantity={addonDialog.quantity}
+          label={addonDialog.label}
+          priceLabel={addonDialog.priceLabel}
+        />
+      )}
     </div>
   );
 };
