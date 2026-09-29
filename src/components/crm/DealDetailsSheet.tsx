@@ -251,7 +251,10 @@ export const DealDetailsSheet = ({ deal, open, onOpenChange, onUpdate }: DealDet
             </div>
             <div className="flex-1">
               <SheetTitle className="text-left">{deal.lead?.name || 'Contato não atribuído'}</SheetTitle>
-              <p className="text-sm text-muted-foreground">{deal.property?.name || 'Sem imóvel'}</p>
+              <p className="text-sm text-muted-foreground">{deal.property?.name
+                  || (deal.unit
+                    ? [deal.unit.unit_number, (deal.unit as any).address].filter(Boolean).join(' · ')
+                    : 'Sem imóvel')}</p>
             </div>
             {canDelete && (
               <AlertDialog>

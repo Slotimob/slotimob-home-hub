@@ -25,7 +25,7 @@ export interface Deal {
   assigned_user_id?: string | null;
   lead: { id: string; name: string; email: string | null; phone: string | null; origin?: string | null };
   property: { id: string; name: string } | null;
-  unit: { id: string; unit_number: string; status?: string } | null;
+  unit: { id: string; unit_number: string; status?: string; address?: string | null } | null;
 }
 
 export const PIPELINE_DEALS_QUERY_KEY = ['pipeline-deals'] as const;
@@ -51,7 +51,7 @@ export const usePipelineDeals = ({ activePipeline, teamFilter, userId }: UsePipe
           *,
           lead:leads(id, name, email, phone, origin),
           property:properties(id, name),
-          unit:units(id, unit_number, status)
+          unit:units(id, unit_number, status, address)
         `)
         .eq('pipeline_type', activePipeline)
         .order('created_at', { ascending: false });
