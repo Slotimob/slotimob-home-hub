@@ -20,7 +20,7 @@ export type ObligationType =
   | "other";
 
 /** `grace`: aluguel em carência isenta — neutro, nunca atrasado. */
-export type ObligationStatus = "paid" | "pending" | "overdue" | "ignored" | "grace" | "not_launched";
+export type ObligationStatus = "paid" | "pending" | "overdue" | "ignored" | "grace" | "not_launched" | "before_contract";
 
 export type ResponsibleRole = "owner" | "tenant" | "agency";
 
@@ -133,10 +133,18 @@ function getCurrentMonthRange(): { start: string; end: string } {
 export function calculateObligationStatus(
   config: ObligationConfig,
   transaction: { status: string; transaction_date: string; due_date?: string | null; is_reconciled?: boolean } | null,
-  referenceDate?: Date
+  referenceDate?: Date,
+  /** Início do contrato vivo (yyyy-MM-dd): competências anteriores ficam "Antes do contrato". */
+  leaseStartDate?: string | null
 ): ObligationStatus {
   if (!config.active) {
     return "ignored";
+  }
+
+  if (leaseStartDate && referenceDate) {
+    const refYm = `${referenceDate.getFullYear()}-${String(referenceDate.getMonth() + 1).padStart(2, "0")}`;
+    const paid = transaction && (transaction.status === "paid" || transaction.is_reconciled === true);
+    if (refYm < leaseStartDate.slice(0, 7) && !paid) return "before_contract";
   }
 
   const today = new Date();
@@ -232,7 +240,7 @@ function findMatchingTransaction(
 function calculateOverallStatus(
   obligations: ObligationHealth[]
 ): "healthy" | "attention" | "critical" {
-  const activeObligations = obligations.filter((o) => o.status !== "ignored");
+  const activeObligations = obligations.filter((o) => o.status !== "ignored" && o.status !== "before_contract");
   
   if (activeObligations.length === 0) {
     return "healthy";
@@ -387,7 +395,7 @@ export function useAssetHealth(referenceDate?: Date) {
             );
           }
 
-          let status = calculateObligationStatus(obligationConfig, matchingTx, targetDate);
+          let status = calculateObligationStatus(obligationConfig, matchingTx, targetDate, link?.start_date ?? null);
           if (
             type === "rent" &&
             obligationConfig.active &&
