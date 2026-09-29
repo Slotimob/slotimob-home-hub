@@ -19,6 +19,7 @@ import {
   FileMinus,
 } from "lucide-react";
 import { format, getDate, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrencyBRL as formatCurrency } from "@/utils/unitPricing";
 import { invalidateLeaseQueries } from "@/lib/query-invalidation";
@@ -522,7 +523,7 @@ export const LeaseProjectionEditor = forwardRef<
   const hasDeductions = (lease?.rent_deductions || []).some((d) => d?.enabled && Number(d.amount) > 0);
   const deductionResult = useMemo(() => {
     if (!lease || !hasDeductions || rentInstallments.length === 0)
-      return { installments: [] as PlannedInstallment[], skipped: 0, unallocated: 0 };
+      return { installments: [] as PlannedInstallment[], skipped: 0, unallocated: 0, requestedCount: 0, transferredFrom: [] as string[] };
     const r = buildRentDeductionInstallments({
       deductions: lease.rent_deductions,
       rentInstallments,
@@ -838,6 +839,13 @@ export const LeaseProjectionEditor = forwardRef<
               icon={<MinusCircle className="h-4 w-4" />}
               transactionType="expense"
               installments={deductionInstallments}
+              countLabel={
+                deductionResult.transferredFrom.length > 0
+                  ? `${deductionResult.requestedCount} parcelas (${deductionResult.transferredFrom.length} transferida${deductionResult.transferredFrom.length > 1 ? "s" : ""} da carência de ${deductionResult.transferredFrom
+                      .map((c) => format(parseISO(`${c}-01`), "MMM/yyyy", { locale: ptBR }))
+                      .join(", ")})`
+                  : undefined
+              }
               amountOverrides={amountOverrides}
               onAmountOverride={onAmountOverride}
               onEditExisting={handleEditExisting}

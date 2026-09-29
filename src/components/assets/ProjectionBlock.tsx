@@ -61,6 +61,8 @@ export interface ProjectionBlockProps {
   onClearAll: (keys: string[]) => void;
   /** Aviso inline (ex.: valor da parcela não definido no contrato). */
   warning?: ReactNode;
+  /** Substitui o texto "x de y parcelas" do cabeçalho. */
+  countLabel?: string;
   /** Nota discreta (ex.: encargo de texto livre lançado sem categoria). */
   notice?: string;
   /** Rótulo do campo de competência (IPTU usa "exercício"). */
@@ -105,6 +107,7 @@ export function ProjectionBlock({
   amountOverrides,
   onAmountOverride,
   onEditExisting,
+  countLabel,
 }: ProjectionBlockProps) {
   const amountOf = (i: PlannedInstallment) => amountOverrides?.[i.key] ?? i.amount;
   const renderAmount = (i: PlannedInstallment) => {
@@ -169,7 +172,7 @@ export function ProjectionBlock({
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-muted-foreground tabular-nums">
-            {selectedList.length} de {installments.length} parcelas ·{" "}
+            {countLabel ?? `${selectedList.length} de ${installments.length} parcelas`} ·{" "}
             <span className="font-medium text-foreground">{formatCurrency(total)}</span>
           </span>
           <div className="flex items-center gap-2">

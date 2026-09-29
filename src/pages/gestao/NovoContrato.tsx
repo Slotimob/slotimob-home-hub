@@ -16,7 +16,9 @@ import {
   ArrowLeft,
   ArrowRight,
   BellRing,
+  Plus,
 } from "lucide-react";
+import { CreateContactDialog } from "@/components/contacts/CreateContactDialog";
 
 
 import { ContactSelector } from "@/components/ContactSelector";
@@ -87,7 +89,9 @@ import { useCepSearch } from "@/hooks/useCepSearch";
 import { useUnsavedChangesGuard } from "@/lib/unsaved-changes-guard";
 import { useUnitSubdivisions } from "@/hooks/useUnitSubdivisions";
 import { supabase } from "@/integrations/supabase/client";
-import { parseDateOnly } from "@/lib/date-only";
+import { parseDateOnly, formatDateOnly } from "@/lib/date-only";
+import { formatCurrencyBRL } from "@/utils/unitPricing";
+import { graceSummary } from "@/lib/lease-special-conditions";
 import {
   ConfirmLeaseProjectionDialog,
   type LeaseForProjection,
@@ -111,7 +115,7 @@ const GUARANTEE_OPTIONS = [
   { value: "caucao" as GuaranteeType, label: "Caução em Dinheiro", description: "Depósito de até 3 meses de aluguel" },
   { value: "fiador" as GuaranteeType, label: "Fiador", description: "Pessoa física como garantidora" },
   { value: "seguro_fianca" as GuaranteeType, label: "Seguro Fiança", description: "Apólice junto a seguradora" },
-  { value: "none" as GuaranteeType, label: "Sem Garantia", description: "Aluguel antecipado (Art. 42)" },
+  { value: "none" as GuaranteeType, label: "Sem Garantia", description: "Sem caução, fiador ou seguro" },
 ];
 
 const CIVIL_STATUS_OPTIONS = [
@@ -149,7 +153,7 @@ const getInitialFormData = () => ({
   is_dimob_deductible: true,
   notes: "",
   adjustment_index: "IGPM",
-  guarantee_type: "caucao" as GuaranteeType,
+  guarantee_type: "" as GuaranteeType | "",
   is_indefinite_term: false,
   adjustment_periodicity_months: 12,
   next_adjustment_date: "",
@@ -207,6 +211,7 @@ export default function NovoContrato() {
   const [unitSearchTerm, setUnitSearchTerm] = useState("");
   const [selectedUnitId, setSelectedUnitId] = useState<string>("");
   const queryClient = useQueryClient();
+  const [createTenantOpen, setCreateTenantOpen] = useState(false);
   const [selectedUnitInfo, setSelectedUnitInfo] = useState<any>(null);
   const [formData, setFormData] = useState(getInitialFormData);
   /** Condições especiais como vieram do banco (edição), para detectar mudança. */
@@ -365,6 +370,21 @@ export default function NovoContrato() {
     unitSubdivisionFlag ? effectiveUnitId : ""
   );
   const showSubdivisionSelect = !!unitSubdivisionFlag && subdivisions.length > 0;
+
+  // Link "Criar contrato" de uma fração: ?unitId=<id>&subdivisionId=<id>
+  const subdivisionIdParam = searchParams.get("subdivisionId");
+  const subdivisionParamAppliedRef = useRef(false);
+  useEffect(() => {
+    if (isEditMode || !subdivisionIdParam || subdivisionParamAppliedRef.current) return;
+    const fraction = subdivisions.find((s) => s.id === subdivisionIdParam);
+    if (!fraction) return;
+    subdivisionParamAppliedRef.current = true;
+    setFormData((prev) => ({
+      ...prev,
+      unit_subdivision_id: fraction.id,
+      rent_amount: fraction.rent_price != null ? Number(fraction.rent_price) : prev.rent_amount,
+    }));
+  }, [subdivisions, subdivisionIdParam, isEditMode]);
 
 
 
@@ -859,6 +879,38 @@ export default function NovoContrato() {
   const primaryRef: LeaseUnitRef = { unit_id: effectiveUnitId, unit_subdivision_id: formData.unit_subdivision_id || null };
   const leaseSharesError = validateExtraUnits(primaryRef, extraUnits);
   const leaseUnitRefs = leaseUnitRefsFor(primaryRef, extraUnits);
+
+  // W2: soma dos preços anunciados dos imóveis/frações do contrato
+  const priceUnitIds = Array.from(new Set(leaseUnitRefs.map((r) => r.unit_id).filter(Boolean))).sort();
+  const priceSubIds = Array.from(
+    new Set(leaseUnitRefs.map((r) => r.unit_subdivision_id).filter(Boolean) as string[])
+  ).sort();
+  const { data: listedPrices } = useQuery({
+    queryKey: ["lease-listed-prices", priceUnitIds.join(","), priceSubIds.join(",")],
+    enabled: leaseUnitRefs.length > 1,
+    queryFn: async () => {
+      const [{ data: us }, { data: subs }] = await Promise.all([
+        supabase.from("units").select("id, unit_number, rent_price").in("id", priceUnitIds),
+        priceSubIds.length
+          ? supabase.from("unit_subdivisions").select("id, label, rent_price").in("id", priceSubIds)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+      return { units: (us as any[]) || [], subs: (subs as any[]) || [] };
+    },
+  });
+  const listedPriceSuggestion = useMemo(() => {
+    if (!listedPrices || leaseUnitRefs.length < 2) return null;
+    const parts = leaseUnitRefs.map((r, i) => {
+      const u = listedPrices.units.find((x) => x.id === r.unit_id);
+      const sub = r.unit_subdivision_id ? listedPrices.subs.find((x) => x.id === r.unit_subdivision_id) : null;
+      const price = Number(sub ? sub.rent_price : u?.rent_price) || 0;
+      const name = sub ? `${u?.unit_number || "Imóvel"} — ${sub.label}` : u?.unit_number || "Imóvel";
+      return { label: i === 0 ? `principal ${formatCurrencyBRL(price)}` : `${name} ${formatCurrencyBRL(price)}`, price };
+    });
+    const total = Math.round(parts.reduce((sum, p) => sum + p.price, 0) * 100) / 100;
+    if (total <= 0) return null;
+    return { total, text: parts.map((p) => p.label).join(" + ") };
+  }, [listedPrices, leaseUnitRefs]);
   const purposeUnitIds = Array.from(new Set(leaseUnitRefs.map((r) => r.unit_id).filter(Boolean))).sort();
   const { data: purposeUnitTypes = [] } = useQuery({
     queryKey: ["lease-purpose-unit-types", purposeUnitIds.join(",")],
@@ -934,6 +986,7 @@ export default function NovoContrato() {
         );
       }
       case "guarantee":
+        if (!formData.guarantee_type) return false;
         if (formData.guarantee_type === "fiador") {
           const hasBasicInfo = !!(guarantorData.nome && guarantorData.cpf) && !guarantorCpfError;
           if (needsSpouseData) {
@@ -1079,7 +1132,7 @@ export default function NovoContrato() {
         notes: formData.notes || undefined,
         adjustment_index: formData.adjustment_index,
         next_adjustment_date: formData.next_adjustment_date || undefined,
-        guarantee_type: formData.guarantee_type,
+        guarantee_type: (formData.guarantee_type || "none") as GuaranteeType,
         guarantor_data: finalGuarantorData,
         payment_info: finalPaymentInfo,
         is_indefinite_term: formData.is_indefinite_term,
@@ -1449,10 +1502,10 @@ export default function NovoContrato() {
               ) : (
               <>
               <div className="space-y-2">
-                <Label>Buscar Imóvel</Label>
+                <Label htmlFor="novocontrato-buscar-imovel">Buscar Imóvel</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
+                  <Input id="novocontrato-buscar-imovel"
                     placeholder="Nome ou endereço..."
                     value={unitSearchTerm}
                     onChange={(e) => setUnitSearchTerm(e.target.value)}
@@ -1533,7 +1586,7 @@ export default function NovoContrato() {
 
               {effectiveUnitId && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs sm:text-sm">Finalidade da locação</Label>
+                  <Label htmlFor="novocontrato-finalidade-da-locacao" className="text-xs sm:text-sm">Finalidade da locação</Label>
                   <Select
                     value={leasePurpose}
                     onValueChange={(v) => {
@@ -1541,7 +1594,7 @@ export default function NovoContrato() {
                       setPurposeTouched(true);
                     }}
                   >
-                    <SelectTrigger className="w-full sm:w-64">
+                    <SelectTrigger id="novocontrato-finalidade-da-locacao" className="w-full sm:w-64">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1553,6 +1606,46 @@ export default function NovoContrato() {
                     <p className="text-[10px] text-muted-foreground">Sugerida pelo tipo dos imóveis do contrato.</p>
                   )}
                 </div>
+              )}
+
+              {effectiveUnitId && (
+                showSubdivisionSelect ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="wizard-fraction">Fração do imóvel principal</Label>
+                    <Select
+                      value={formData.unit_subdivision_id ?? "none"}
+                      onValueChange={(v) => {
+                        const id = v === "none" ? null : v;
+                        const fraction = subdivisions.find((s) => s.id === id);
+                        setFormData((prev) => ({
+                          ...prev,
+                          unit_subdivision_id: id,
+                          rent_amount:
+                            fraction?.rent_price != null
+                              ? Number(fraction.rent_price)
+                              : prev.rent_amount,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger id="wizard-fraction">
+                        <SelectValue placeholder="Imóvel inteiro" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Imóvel inteiro (sem fração)</SelectItem>
+                        {subdivisions.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.label}
+                            {s.area != null ? ` — ${s.area}m²` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Opcional. Selecione a fração quando o contrato for de apenas uma parte do
+                      imóvel — o valor do aluguel é preenchido automaticamente e pode ser ajustado.
+                    </p>
+                  </div>
+                ) : null
               )}
 
               {effectiveUnitId && (
@@ -1587,10 +1680,11 @@ export default function NovoContrato() {
                 </Card>
               )}
               <div className="space-y-2">
-                <Label>Buscar Inquilino</Label>
+                <Label htmlFor="wizard-tenant-search">Buscar Inquilino</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
+                    id="wizard-tenant-search"
                     placeholder="Nome, email ou telefone..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -1600,7 +1694,13 @@ export default function NovoContrato() {
               </div>
 
               <div className="space-y-2">
-                <Label>Selecionar Inquilino *</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label id="wizard-tenant-list-label">Selecionar Inquilino *</Label>
+                  <Button type="button" size="sm" variant="outline" onClick={() => setCreateTenantOpen(true)}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Novo inquilino
+                  </Button>
+                </div>
                 {loadingTenants ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -1665,6 +1765,22 @@ export default function NovoContrato() {
               </AlertDescription>
             </Alert>
           )}
+          {step === "financial" && listedPriceSuggestion && Math.abs(listedPriceSuggestion.total - (formData.rent_amount || 0)) > 0.004 && (
+            <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-md border bg-muted/40 p-3 text-sm">
+              <p>
+                Soma dos preços anunciados: <span className="font-semibold">{formatCurrencyBRL(listedPriceSuggestion.total)}</span>{" "}
+                <span className="text-muted-foreground">({listedPriceSuggestion.text})</span>
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setFormData((prev) => ({ ...prev, rent_amount: listedPriceSuggestion.total }))}
+              >
+                Usar soma
+              </Button>
+            </div>
+          )}
           {step === "financial" && (
             <LeaseFinancialStep
               value={formData as unknown as LeaseFinancialValue}
@@ -1679,45 +1795,6 @@ export default function NovoContrato() {
                 name: ownerContactInfo?.name || editLease?.owner?.name || null,
               }}
               adjustmentLocked={isEditMode}
-              header={
-                showSubdivisionSelect ? (
-                  <div className="space-y-2">
-                    <Label>Fração</Label>
-                    <Select
-                      value={formData.unit_subdivision_id ?? "none"}
-                      onValueChange={(v) => {
-                        const id = v === "none" ? null : v;
-                        const fraction = subdivisions.find((s) => s.id === id);
-                        setFormData((prev) => ({
-                          ...prev,
-                          unit_subdivision_id: id,
-                          rent_amount:
-                            fraction?.rent_price != null
-                              ? Number(fraction.rent_price)
-                              : prev.rent_amount,
-                        }));
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Imóvel inteiro" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Imóvel inteiro (sem fração)</SelectItem>
-                        {subdivisions.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            {s.label}
-                            {s.area != null ? ` — ${s.area}m²` : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Opcional. Selecione a fração quando o contrato for de apenas uma parte do
-                      imóvel — o valor do aluguel é preenchido automaticamente e pode ser ajustado.
-                    </p>
-                  </div>
-                ) : null
-              }
             />
           )}
 
@@ -1725,8 +1802,8 @@ export default function NovoContrato() {
           {step === "guarantee" && (
             <div className="space-y-4">
               <div className="space-y-3">
-                <Label className="text-base font-semibold">Tipo de Garantia *</Label>
-                <RadioGroup
+                <Label id="novocontrato-tipo-de-garantia" className="text-base font-semibold">Tipo de Garantia *</Label>
+                <RadioGroup aria-labelledby="novocontrato-tipo-de-garantia"
                   value={formData.guarantee_type}
                   onValueChange={(v) =>
                     setFormData({ ...formData, guarantee_type: v as GuaranteeType })
@@ -1769,8 +1846,8 @@ export default function NovoContrato() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                     <div className="sm:col-span-2 space-y-1.5">
-                      <Label className="text-xs sm:text-sm">Nome Completo *</Label>
-                      <Input
+                      <Label htmlFor="novocontrato-nome-completo" className="text-xs sm:text-sm">Nome Completo *</Label>
+                      <Input id="novocontrato-nome-completo"
                         value={guarantorData.nome}
                         onChange={(e) =>
                           setGuarantorData({ ...guarantorData, nome: e.target.value })
@@ -1779,8 +1856,8 @@ export default function NovoContrato() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs sm:text-sm">CPF *</Label>
-                      <Input
+                      <Label htmlFor="novocontrato-cpf" className="text-xs sm:text-sm">CPF *</Label>
+                      <Input id="novocontrato-cpf"
                         value={guarantorData.cpf}
                         onChange={(e) => setGuarantorData({ ...guarantorData, cpf: e.target.value })}
                         placeholder="000.000.000-00"
@@ -1791,16 +1868,16 @@ export default function NovoContrato() {
                       )}
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs sm:text-sm">RG</Label>
-                      <Input
+                      <Label htmlFor="novocontrato-rg" className="text-xs sm:text-sm">RG</Label>
+                      <Input id="novocontrato-rg"
                         value={guarantorData.rg || ""}
                         onChange={(e) => setGuarantorData({ ...guarantorData, rg: e.target.value })}
                         placeholder="RG"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs sm:text-sm">Profissão</Label>
-                      <Input
+                      <Label htmlFor="novocontrato-profissao" className="text-xs sm:text-sm">Profissão</Label>
+                      <Input id="novocontrato-profissao"
                         value={guarantorData.profissao || ""}
                         onChange={(e) =>
                           setGuarantorData({ ...guarantorData, profissao: e.target.value })
@@ -1809,14 +1886,14 @@ export default function NovoContrato() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs sm:text-sm">Estado Civil *</Label>
+                      <Label htmlFor="novocontrato-estado-civil" className="text-xs sm:text-sm">Estado Civil *</Label>
                       <Select
                         value={guarantorData.estadoCivil}
                         onValueChange={(v) =>
                           setGuarantorData({ ...guarantorData, estadoCivil: v })
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger id="novocontrato-estado-civil">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1834,9 +1911,9 @@ export default function NovoContrato() {
                     <p className="text-xs sm:text-sm text-muted-foreground">Endereço do Fiador</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
                       <div className="space-y-1.5">
-                        <Label className="text-xs sm:text-sm">CEP</Label>
+                        <Label htmlFor="novocontrato-cep" className="text-xs sm:text-sm">CEP</Label>
                         <div className="relative">
-                          <Input
+                          <Input id="novocontrato-cep"
                             value={guarantorData.cep || ""}
                             onChange={(e) =>
                               setGuarantorData({ ...guarantorData, cep: formatCep(e.target.value) })
@@ -1851,8 +1928,8 @@ export default function NovoContrato() {
                         </div>
                       </div>
                       <div className="col-span-1 sm:col-span-2 space-y-1.5">
-                        <Label className="text-xs sm:text-sm">Endereço</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-endereco" className="text-xs sm:text-sm">Endereço</Label>
+                        <Input id="novocontrato-endereco"
                           value={guarantorData.endereco}
                           onChange={(e) =>
                             setGuarantorData({ ...guarantorData, endereco: e.target.value })
@@ -1863,8 +1940,8 @@ export default function NovoContrato() {
                     </div>
                     <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                       <div className="space-y-1.5">
-                        <Label className="text-xs sm:text-sm">Cidade</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-cidade" className="text-xs sm:text-sm">Cidade</Label>
+                        <Input id="novocontrato-cidade"
                           value={guarantorData.cidade}
                           onChange={(e) =>
                             setGuarantorData({ ...guarantorData, cidade: e.target.value })
@@ -1873,8 +1950,8 @@ export default function NovoContrato() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs sm:text-sm">UF</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-uf" className="text-xs sm:text-sm">UF</Label>
+                        <Input id="novocontrato-uf"
                           value={guarantorData.estado}
                           onChange={(e) =>
                             setGuarantorData({
@@ -1903,8 +1980,8 @@ export default function NovoContrato() {
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="sm:col-span-2 space-y-2">
-                          <Label>Nome do Cônjuge *</Label>
-                          <Input
+                          <Label htmlFor="novocontrato-nome-do-conjuge">Nome do Cônjuge *</Label>
+                          <Input id="novocontrato-nome-do-conjuge"
                             value={guarantorData.conjuge?.nome || ""}
                             onChange={(e) =>
                               setGuarantorData({
@@ -1920,8 +1997,8 @@ export default function NovoContrato() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>CPF do Cônjuge *</Label>
-                          <Input
+                          <Label htmlFor="novocontrato-cpf-do-conjuge">CPF do Cônjuge *</Label>
+                          <Input id="novocontrato-cpf-do-conjuge"
                             value={guarantorData.conjuge?.cpf || ""}
                             onChange={(e) =>
                               setGuarantorData({
@@ -1937,8 +2014,8 @@ export default function NovoContrato() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>RG do Cônjuge</Label>
-                          <Input
+                          <Label htmlFor="novocontrato-rg-do-conjuge">RG do Cônjuge</Label>
+                          <Input id="novocontrato-rg-do-conjuge"
                             value={guarantorData.conjuge?.rg || ""}
                             onChange={(e) =>
                               setGuarantorData({
@@ -1962,8 +2039,8 @@ export default function NovoContrato() {
                     <p className="text-sm text-muted-foreground">Imóvel em Garantia (opcional)</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="sm:col-span-2 space-y-2">
-                        <Label>Endereço do Imóvel</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-endereco-do-imovel">Endereço do Imóvel</Label>
+                        <Input id="novocontrato-endereco-do-imovel"
                           value={guarantorData.imovelGarantia?.endereco || ""}
                           onChange={(e) =>
                             setGuarantorData({
@@ -1979,8 +2056,8 @@ export default function NovoContrato() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Matrícula</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-matricula">Matrícula</Label>
+                        <Input id="novocontrato-matricula"
                           value={guarantorData.imovelGarantia?.matricula || ""}
                           onChange={(e) =>
                             setGuarantorData({
@@ -1996,8 +2073,8 @@ export default function NovoContrato() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Cartório</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-cartorio">Cartório</Label>
+                        <Input id="novocontrato-cartorio"
                           value={guarantorData.imovelGarantia?.cartorio || ""}
                           onChange={(e) =>
                             setGuarantorData({
@@ -2032,14 +2109,14 @@ export default function NovoContrato() {
               </div>
 
               <div className="space-y-3">
-                <Label>Tipo de Pagamento</Label>
+                <Label htmlFor="novocontrato-tipo-de-pagamento">Tipo de Pagamento</Label>
                 <Select
                   value={paymentInfo.tipo}
                   onValueChange={(v) =>
                     setPaymentInfo({ ...paymentInfo, tipo: v as "pix" | "banco" | "boleto" })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="novocontrato-tipo-de-pagamento">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -2052,8 +2129,8 @@ export default function NovoContrato() {
 
               {paymentInfo.tipo === "pix" && (
                 <div className="space-y-2">
-                  <Label>Chave PIX</Label>
-                  <Input
+                  <Label htmlFor="novocontrato-chave-pix">Chave PIX</Label>
+                  <Input id="novocontrato-chave-pix"
                     value={paymentInfo.chavePix || ""}
                     onChange={(e) => setPaymentInfo({ ...paymentInfo, chavePix: e.target.value })}
                     placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
@@ -2065,32 +2142,32 @@ export default function NovoContrato() {
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="sm:col-span-2 space-y-2">
-                      <Label>Banco</Label>
-                      <Input
+                      <Label htmlFor="novocontrato-banco">Banco</Label>
+                      <Input id="novocontrato-banco"
                         value={paymentInfo.banco || ""}
                         onChange={(e) => setPaymentInfo({ ...paymentInfo, banco: e.target.value })}
                         placeholder="Nome do banco"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Agência</Label>
-                      <Input
+                      <Label htmlFor="novocontrato-agencia">Agência</Label>
+                      <Input id="novocontrato-agencia"
                         value={paymentInfo.agencia || ""}
                         onChange={(e) => setPaymentInfo({ ...paymentInfo, agencia: e.target.value })}
                         placeholder="0000"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Conta</Label>
-                      <Input
+                      <Label htmlFor="novocontrato-conta">Conta</Label>
+                      <Input id="novocontrato-conta"
                         value={paymentInfo.conta || ""}
                         onChange={(e) => setPaymentInfo({ ...paymentInfo, conta: e.target.value })}
                         placeholder="00000-0"
                       />
                     </div>
                     <div className="sm:col-span-2 space-y-2">
-                      <Label>Titular</Label>
-                      <Input
+                      <Label htmlFor="novocontrato-titular">Titular</Label>
+                      <Input id="novocontrato-titular"
                         value={paymentInfo.titular || ""}
                         onChange={(e) => setPaymentInfo({ ...paymentInfo, titular: e.target.value })}
                         placeholder="Nome do titular da conta"
@@ -2139,8 +2216,8 @@ export default function NovoContrato() {
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Configurações de Cobrança</p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-xs">Multa por atraso (%)</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-multa-por-atraso" className="text-xs">Multa por atraso (%)</Label>
+                        <Input id="novocontrato-multa-por-atraso"
                           type="number"
                           min={0}
                           max={10}
@@ -2151,8 +2228,8 @@ export default function NovoContrato() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs">Juros ao mês (%)</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-juros-ao-mes" className="text-xs">Juros ao mês (%)</Label>
+                        <Input id="novocontrato-juros-ao-mes"
                           type="number"
                           min={0}
                           max={5}
@@ -2163,8 +2240,8 @@ export default function NovoContrato() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs">Desconto (R$)</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-desconto-r" className="text-xs">Desconto (R$)</Label>
+                        <Input id="novocontrato-desconto-r"
                           type="number"
                           min={0}
                           step={0.01}
@@ -2176,8 +2253,8 @@ export default function NovoContrato() {
                     </div>
                     {(paymentInfo.discount_value ?? 0) > 0 && (
                       <div className="space-y-1">
-                        <Label className="text-xs">Dias antes do vencimento para desconto</Label>
-                        <Input
+                        <Label htmlFor="novocontrato-dias-antes-do-vencimento-para-desconto" className="text-xs">Dias antes do vencimento para desconto</Label>
+                        <Input id="novocontrato-dias-antes-do-vencimento-para-desconto"
                           type="number"
                           min={1}
                           max={30}
@@ -2291,8 +2368,8 @@ export default function NovoContrato() {
               </div>
 
               <div className="space-y-2">
-                <Label>Nome do Contato *</Label>
-                <Input
+                <Label htmlFor="novocontrato-nome-do-contato">Nome do Contato *</Label>
+                <Input id="novocontrato-nome-do-contato"
                   value={billingContact.name}
                   onChange={(e) => setBillingContact((p) => ({ ...p, name: e.target.value }))}
                   placeholder="Nome do responsável pelo pagamento"
@@ -2303,8 +2380,8 @@ export default function NovoContrato() {
               </div>
 
               <div className="space-y-2">
-                <Label>E-mail para Cobrança</Label>
-                <Input
+                <Label htmlFor="novocontrato-e-mail-para-cobranca">E-mail para Cobrança</Label>
+                <Input id="novocontrato-e-mail-para-cobranca"
                   type="email"
                   value={billingContact.email}
                   onChange={(e) => setBillingContact((p) => ({ ...p, email: e.target.value }))}
@@ -2316,8 +2393,8 @@ export default function NovoContrato() {
               </div>
 
               <div className="space-y-2">
-                <Label>Contato de WhatsApp</Label>
-                <ContactSelector
+                <Label id="novocontrato-contato-de-whatsapp">Contato de WhatsApp</Label>
+                <ContactSelector aria-labelledby="novocontrato-contato-de-whatsapp"
                   value={billingContact.contact_id || null}
                   onChange={(id) => setBillingContact((p) => ({ ...p, contact_id: id || "" }))}
                   placeholder="Selecione o contato para mensagens de cobrança"
@@ -2336,7 +2413,7 @@ export default function NovoContrato() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Label>CIB (Cadastro Imobiliário Brasileiro)</Label>
+                  <Label htmlFor="novocontrato-cib">CIB (Cadastro Imobiliário Brasileiro)</Label>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
@@ -2352,6 +2429,7 @@ export default function NovoContrato() {
                   </TooltipProvider>
                 </div>
                 <Input
+                  id="novocontrato-cib"
                   value={formData.cib}
                   onChange={(e) => setFormData({ ...formData, cib: e.target.value })}
                   placeholder="Ex: 0000.0000.0000.0000-00"
@@ -2367,10 +2445,10 @@ export default function NovoContrato() {
               <div className="flex items-center justify-between gap-3 p-3 border rounded-lg">
                 <div className="flex-1">
                   <Label htmlFor="dimob" className="text-sm font-medium cursor-pointer">
-                    Dedutível para DIMOB
+                    Declarar na DIMOB
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Marque se os valores devem ser declarados na DIMOB
+                    Marque para incluir os aluguéis deste contrato na declaração DIMOB
                   </p>
                 </div>
                 <Switch
@@ -2383,8 +2461,8 @@ export default function NovoContrato() {
               </div>
 
               <div className="space-y-2">
-                <Label>Observações</Label>
-                <Textarea
+                <Label htmlFor="novocontrato-observacoes">Observações</Label>
+                <Textarea id="novocontrato-observacoes"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Anotações sobre o contrato..."
@@ -2431,6 +2509,59 @@ export default function NovoContrato() {
                   </span>
                   <span>Vencimento:</span>
                   <span className="font-medium text-foreground">Dia {formData.due_day}</span>
+                  <span>Vigência:</span>
+                  <span className="font-medium text-foreground">
+                    {formatDateOnly(formData.start_date, "dd/MM/yyyy")}
+                    {formData.is_indefinite_term || !formData.end_date
+                      ? " — prazo indeterminado"
+                      : ` a ${formatDateOnly(formData.end_date, "dd/MM/yyyy")}`}
+                  </span>
+                  <span>Finalidade:</span>
+                  <span className="font-medium text-foreground">{leasePurpose === "comercial" ? "Comercial" : "Residencial"}</span>
+                  <span>Taxa de administração:</span>
+                  <span className="font-medium text-foreground">
+                    {(formData.admin_fee_percentage || 0).toLocaleString("pt-BR")}%
+                  </span>
+                  {formData.rent_grace?.enabled && (
+                    <>
+                      <span>Carência:</span>
+                      <span className="font-medium text-foreground">
+                        {graceSummary(formData.rent_grace, formData.start_date).label || "configurada"}
+                      </span>
+                    </>
+                  )}
+                  {(formData.rent_deductions || []).some((d) => d.enabled && isValidRentDeduction(d)) && (
+                    <>
+                      <span>Abatimentos:</span>
+                      <span className="font-medium text-foreground">
+                        {(formData.rent_deductions || [])
+                          .filter((d) => d.enabled && isValidRentDeduction(d))
+                          .map((d) => {
+                            const n =
+                              d.recurrence === "installments"
+                                ? ` × ${d.installments || 1}`
+                                : d.recurrence === "monthly"
+                                  ? " por mês"
+                                  : "";
+                            return `${d.label}: ${formatCurrencyBRL(Number(d.amount) || 0)}${n}`;
+                          })
+                          .join("; ")}
+                      </span>
+                    </>
+                  )}
+                  {(formData as any).rent_withholding?.enabled && (
+                    <>
+                      <span>IRRF:</span>
+                      <span className="font-medium text-foreground">
+                        {(() => {
+                          const w = (formData as any).rent_withholding;
+                          if (w.mode === "percent") return `Retido pelo inquilino: ${(Number(w.percent) || 0).toLocaleString("pt-BR")}%`;
+                          if (w.mode === "fixed") return `Retido pelo inquilino: ${formatCurrencyBRL(Number(w.fixed_amount) || 0)}`;
+                          return "Retido pelo inquilino pela tabela progressiva";
+                        })()}
+                      </span>
+                    </>
+                  )}
                   <span>Garantia:</span>
                   <span className="font-medium text-foreground">
                     {GUARANTEE_OPTIONS.find((o) => o.value === formData.guarantee_type)?.label}
@@ -2466,6 +2597,15 @@ export default function NovoContrato() {
           </Button>
         )}
       </div>
+      <CreateContactDialog
+        open={createTenantOpen}
+        onOpenChange={setCreateTenantOpen}
+        defaultCategory={"Inquilino" as any}
+        onSuccess={async (c) => {
+          await queryClient.invalidateQueries({ queryKey: ["contacts-tenants"] });
+          if (c?.id) setFormData((prev) => ({ ...prev, tenant_contact_id: c.id }));
+        }}
+      />
       <ConfirmLeaseProjectionDialog
         open={projectionOpen}
         onOpenChange={(o) => {

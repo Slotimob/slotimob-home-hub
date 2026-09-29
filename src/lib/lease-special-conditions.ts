@@ -101,7 +101,15 @@ export function buildRentDeductionInstallments({
   deductions: RentDeductionConfig[] | null | undefined;
   rentInstallments: PlannedInstallment[];
   ownerContactId?: string | null;
-}): { installments: PlannedInstallment[]; skipped: number; unallocated: number } {
+}): {
+  installments: PlannedInstallment[];
+  skipped: number;
+  unallocated: number;
+  /** Nº de parcelas pedidas (competências da janela). */
+  requestedCount: number;
+  /** Competências (YYYY-MM) cujo abatimento foi transferido (ex.: mês isento). */
+  transferredFrom: string[];
+} {
   const rentByComp = new Map(rentInstallments.map((r) => [r.competencyPeriod, r]));
   const comps = Array.from(rentByComp.keys()).sort();
   const active = (deductions || []).filter((d) => d.enabled && Number(d.amount) > 0);
@@ -121,6 +129,7 @@ export function buildRentDeductionInstallments({
   });
 
   const installments: PlannedInstallment[] = [];
+  const transferredFrom: string[] = [];
   for (const c of comps) {
     const rent = rentByComp.get(c)!;
     let capacity = Math.max(0, rent.amount);
@@ -130,6 +139,7 @@ export function buildRentDeductionInstallments({
       const take = round2(Math.min(wanted, capacity));
       r.carry = round2(wanted - take);
       capacity = round2(capacity - take);
+      if ((r.perComp.get(c) ?? 0) > 0 && r.carry > 0 && !transferredFrom.includes(c)) transferredFrom.push(c);
       if (take <= 0) continue;
       const obligationType = `rent_deduction_${r.d.id.slice(0, 8)}`;
       const dedupKey = `${obligationType}:${c}:${rent.dueDate}`;
@@ -154,7 +164,8 @@ export function buildRentDeductionInstallments({
 
   // Excedente que não coube em nenhuma competência da janela
   const unallocated = round2(requested.reduce((sum, r) => sum + r.carry, 0));
-  return { installments, skipped, unallocated };
+  const requestedCount = requested.reduce((sum, r) => sum + r.perComp.size, 0);
+  return { installments, skipped, unallocated, requestedCount, transferredFrom };
 }
 
 /* ─── IRRF ─────────────────────────────────────────────────────────── */
