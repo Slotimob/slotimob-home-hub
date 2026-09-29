@@ -290,7 +290,7 @@ function ResponsibleField({
           {chargeTo === "tenant" ? "Inquilino" : "Proprietário"}: {linkedName}
         </Badge>
       ) : (
-        <p className="text-[11px] text-amber-600">
+        <p className="text-[11px] text-amber-700 dark:text-amber-400">
           {chargeTo === "tenant"
             ? "Selecione o inquilino na etapa de Inquilino para vincular o registro."
             : "O imóvel selecionado não tem proprietário cadastrado."}

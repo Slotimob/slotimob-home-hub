@@ -359,7 +359,7 @@ const AdminCockpit = () => {
                                       {planLabels[org.plan_id] || org.plan_id}
                                     </Badge>
                                     {org.is_early_adopter && (
-                                      <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-600 dark:text-amber-400">EA</Badge>
+                                      <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-700 dark:text-amber-400">EA</Badge>
                                     )}
                                     {isTrialActive && (
                                       <Badge variant="outline" className="text-xs">Trial</Badge>

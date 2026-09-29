@@ -330,7 +330,7 @@ export function LeaseExtraUnitsSection({ primary, primaryLabel, value, onChange,
 
           {busyKeys.length > 0 && (
             <Alert className="border-amber-500/50">
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-400" />
               <AlertDescription className="text-xs">
                 Já possui outro contrato ativo ou pendente:{" "}
                 {extraRefs.filter((r) => busyKeys.includes(leaseUnitRefKey(r))).map(refLabel).join(", ")}. Você pode continuar mesmo assim.

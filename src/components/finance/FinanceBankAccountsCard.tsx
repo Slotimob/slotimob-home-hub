@@ -174,7 +174,7 @@ export function FinanceBankAccountsCard() {
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <p className="text-xs font-medium text-muted-foreground">Total Consolidado</p>
                     {totals.hasCashFlowRisk && (
-                      <span className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <span className="text-[10px] text-amber-700 dark:text-amber-400 flex items-center gap-1">
                         <AlertTriangle className="h-3 w-3" />
                         Alerta
                       </span>

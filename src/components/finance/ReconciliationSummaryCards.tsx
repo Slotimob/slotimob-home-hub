@@ -43,7 +43,7 @@ export function ReconciliationSummaryCards({
       title: "Pendente",
       value: totalPending,
       icon: Clock,
-      color: "text-amber-600",
+      color: "text-amber-700 dark:text-amber-400",
       bgColor: "bg-amber-500/10",
     },
   ];

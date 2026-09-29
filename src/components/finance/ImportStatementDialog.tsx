@@ -537,7 +537,7 @@ export function ImportStatementDialog({
           {/* Duplicate Warning */}
           {duplicateWarning && (
             <Alert className="border-amber-500/50 bg-amber-500/10">
-              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertCircle className="h-4 w-4 text-amber-700 dark:text-amber-400" />
               <AlertDescription className="text-amber-700 dark:text-amber-400">
                 {duplicateWarning}
               </AlertDescription>

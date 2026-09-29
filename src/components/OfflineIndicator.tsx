@@ -62,7 +62,7 @@ export function OfflineIndicator() {
             {!isOnline ? (
               <Badge
                 variant="outline"
-                className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 gap-1.5 py-1"
+                className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/30 gap-1.5 py-1"
               >
                 <WifiOff className="h-3 w-3" />
                 <span className="hidden sm:inline text-xs">Offline</span>

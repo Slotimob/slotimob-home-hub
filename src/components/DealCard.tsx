@@ -47,7 +47,7 @@ const temperatureConfig = {
   warm: {
     label: 'Morno',
     icon: Thermometer,
-    className: 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30',
+    className: 'bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/30',
   },
   cold: {
     label: 'Frio',
@@ -191,7 +191,7 @@ export const DealCard = ({
               </div>
               {/* Temperature or Rotting badge */}
               {isRotting ? (
-                <Badge variant="outline" className="text-[10px] gap-0.5 px-1.5 py-0 border-amber-500/40 text-amber-600 dark:text-amber-400 flex-shrink-0">
+                <Badge variant="outline" className="text-[10px] gap-0.5 px-1.5 py-0 border-amber-500/40 text-amber-700 dark:text-amber-400 flex-shrink-0">
                   <Hourglass className="h-2.5 w-2.5" />
                   Parado
                 </Badge>
@@ -226,7 +226,7 @@ export const DealCard = ({
             {timeLabel && (
               <span className={cn(
                 "text-[11px] flex items-center gap-1 text-muted-foreground",
-                isRotting && "text-amber-600 dark:text-amber-400"
+                isRotting && "text-amber-700 dark:text-amber-400"
               )}>
                 <Clock className="h-3 w-3" />
                 {timeLabel}
@@ -278,7 +278,7 @@ export const DealCard = ({
               </Badge>
             )}
             {hasNoTasks && deal.stage !== 'won' && deal.stage !== 'lost' && (
-              <Badge variant="outline" className="text-[10px] gap-0.5 px-1.5 py-0 border-amber-500/40 text-amber-600 dark:text-amber-400">
+              <Badge variant="outline" className="text-[10px] gap-0.5 px-1.5 py-0 border-amber-500/40 text-amber-700 dark:text-amber-400">
                 <AlertTriangle className="h-2.5 w-2.5" />
                 Sem ação
               </Badge>

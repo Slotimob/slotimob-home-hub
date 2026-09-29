@@ -137,7 +137,7 @@ export function FinanceOverviewCards({ unitId, dateFrom, dateTo }: FinanceOvervi
         {/* Warning for pending repasses */}
         {showRepasseWarning && (
           <Alert className="border-amber-500/50 bg-amber-500/10">
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-400" />
             <AlertDescription className="text-amber-700 dark:text-amber-400">
               <strong>Atenção:</strong> Você tem {overview?.repasseCount} repasses a proprietários pendentes totalizando{" "}
               <span className="font-semibold">{formatCurrencyFull(overview?.pendingRepasse || 0)}</span>. 

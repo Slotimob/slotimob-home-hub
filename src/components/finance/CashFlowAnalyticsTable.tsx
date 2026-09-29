@@ -30,7 +30,7 @@ const rows: RowConfig[] = [
 
 function getValueColor(value: number, type?: "income" | "expense" | "balance", isPending?: boolean): string {
   if (isPending) {
-    return "text-amber-600 dark:text-amber-400";
+    return "text-amber-700 dark:text-amber-400";
   }
   
   if (type === "balance") {
@@ -131,7 +131,7 @@ export function CashFlowAnalyticsTable({ data }: CashFlowAnalyticsTableProps) {
                     stickyBg,
                     row.isTotal ? "text-sm font-semibold" : "text-xs",
                     row.isSubRow && "pl-6",
-                    row.isPending && "text-amber-600 dark:text-amber-400"
+                    row.isPending && "text-amber-700 dark:text-amber-400"
                   )}
                 >
                   {row.label}

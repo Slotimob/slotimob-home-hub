@@ -241,7 +241,7 @@ export function EmitirCobrancaDialog({
         {notConfigured ? (
           <div className="rounded-md border border-yellow-200 bg-yellow-50 p-4 text-sm">
             <div className="flex gap-2 items-start">
-              <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
+              <AlertCircle className="h-4 w-4 text-yellow-700 dark:text-yellow-400 mt-0.5" />
               <div className="space-y-2">
                 <p className="font-medium text-yellow-900">Subconta Asaas não configurada</p>
                 <p className="text-yellow-800">

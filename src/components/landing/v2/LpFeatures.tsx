@@ -197,7 +197,7 @@ function MockContrato() {
               <Clock className="h-4 w-4 text-amber-500" />
               Locatário
             </span>
-            <span className="text-xs text-amber-600">Aguardando…</span>
+            <span className="text-xs text-amber-700 dark:text-amber-400">Aguardando…</span>
           </li>
         </ul>
       </div>

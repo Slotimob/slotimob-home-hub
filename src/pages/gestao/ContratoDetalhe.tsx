@@ -603,7 +603,7 @@ export default function ContratoDetalhe() {
                 ) : billingStatus.dueDay ? (
                   <>
                     <Clock className="h-5 w-5 text-yellow-500" />
-                    <span className="text-sm text-yellow-600 font-medium">Vence hoje</span>
+                    <span className="text-sm text-yellow-700 dark:text-yellow-400 font-medium">Vence hoje</span>
                   </>
                 ) : (
                   <>

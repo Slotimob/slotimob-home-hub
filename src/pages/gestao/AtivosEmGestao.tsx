@@ -264,7 +264,7 @@ const AtivosEmGestao = () => {
                 label: "Atenção",
                 value: stats.attention,
                 icon: <AlertCircle className="h-5 w-5 text-yellow-500" />,
-                valueClass: "text-yellow-600",
+                valueClass: "text-yellow-700 dark:text-yellow-400",
                 ringClass: "ring-yellow-500",
                 bgClass: "",
               },

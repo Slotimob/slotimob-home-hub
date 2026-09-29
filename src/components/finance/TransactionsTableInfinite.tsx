@@ -944,7 +944,7 @@ export function TransactionsTableInfinite({
                               disabled={isAlreadyImprovement(transaction)}
                               onClick={() => setImprovementTransaction(transaction)}
                             >
-                              <Hammer className="h-3.5 w-3.5 mr-2 text-amber-600" />
+                              <Hammer className="h-3.5 w-3.5 mr-2 text-amber-700 dark:text-amber-400" />
                               {isAlreadyImprovement(transaction)
                                 ? 'Já é uma benfeitoria'
                                 : 'Marcar como Benfeitoria'}

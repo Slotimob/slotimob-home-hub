@@ -26,8 +26,8 @@ export function TrialBanner() {
     const tone = urgent
       ? {
           wrapper: 'border-amber-500/30 bg-amber-500/5',
-          icon: 'text-amber-600 dark:text-amber-400',
-          button: 'border-amber-500/50 text-amber-600 hover:bg-amber-500/10',
+          icon: 'text-amber-700 dark:text-amber-400',
+          button: 'border-amber-500/50 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10',
         }
       : {
           wrapper: 'border-blue-500/30 bg-blue-500/5',
@@ -67,7 +67,7 @@ export function TrialBanner() {
   // Trial expired - incentive to Essencial as entry point
   return (
     <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-      <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+      <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
         <Clock className="h-5 w-5" />
         <span className="font-semibold text-sm">Trial Expirado</span>
       </div>

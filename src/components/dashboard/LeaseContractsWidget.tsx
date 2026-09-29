@@ -59,7 +59,7 @@ export function LeaseContractsWidget() {
       shortLabel: 'Reajustes',
       value: adjustmentsDue,
       icon: CalendarClock,
-      color: 'text-amber-600 dark:text-amber-500',
+      color: 'text-amber-700 dark:text-amber-500',
       bgColor: 'bg-amber-500/10',
     },
   ];

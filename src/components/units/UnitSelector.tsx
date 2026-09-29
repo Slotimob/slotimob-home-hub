@@ -135,7 +135,7 @@ export const UnitSelector = ({ value, onChange, placeholder = 'Buscar unidade...
                   )}
                   {unitLabel(u)}
                   {u.tenant_contact_id && (
-                    <span className="ml-auto text-[10px] text-amber-600 dark:text-amber-400">ocupado</span>
+                    <span className="ml-auto text-[10px] text-amber-700 dark:text-amber-400">ocupado</span>
                   )}
                 </CommandItem>
               ))}

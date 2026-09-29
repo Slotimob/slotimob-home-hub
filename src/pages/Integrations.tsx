@@ -308,7 +308,7 @@ const Integrations = () => {
                       Conectado
                     </Badge>
                   ) : isPreparing ? (
-                    <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
+                    <Badge className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20">
                       <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                       Preparando...
                     </Badge>

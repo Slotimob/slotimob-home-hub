@@ -518,7 +518,7 @@ function StatCard({
   const tones = {
     primary: 'bg-primary/10 text-primary',
     green: 'bg-green-50 text-green-600 dark:bg-green-950/40 dark:text-green-400',
-    amber: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400',
+    amber: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400',
     blue: 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400',
   } as const;
   return (

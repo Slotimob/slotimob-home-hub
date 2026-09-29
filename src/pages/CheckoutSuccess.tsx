@@ -102,7 +102,7 @@ export default function CheckoutSuccess() {
                 <Mail className="h-4 w-4" />
                 <span className="font-semibold text-sm">Verifique seu e-mail</span>
               </div>
-              <p className="text-sm text-amber-600 dark:text-amber-400/80">
+              <p className="text-sm text-amber-700 dark:text-amber-400/80">
                 Enviamos um link para você definir sua senha de acesso. Verifique sua caixa de entrada e spam.
               </p>
             </div>

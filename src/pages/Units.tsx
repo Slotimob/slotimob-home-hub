@@ -495,7 +495,7 @@ const Units = () => {
               <CardTitle className="text-xs font-medium text-muted-foreground">Reservadas</CardTitle>
             </CardHeader>
             <CardContent className="pb-3 px-3">
-              <div className="text-xl sm:text-2xl font-bold text-yellow-600">{stats.reserved}</div>
+              <div className="text-xl sm:text-2xl font-bold text-yellow-700 dark:text-yellow-400">{stats.reserved}</div>
             </CardContent>
           </Card>
           <Card 

@@ -29,9 +29,9 @@ export const UNIT_STATUS_STYLES: Record<UnitStatus, {
     label: 'Reservado',
     hex: '#eab308',
     rgb: '234, 179, 8',
-    badgeClasses: 'bg-yellow-500/15 text-yellow-600 border-yellow-500/30',
+    badgeClasses: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30',
     cardClasses: 'border-yellow-500/30 bg-gradient-to-br from-yellow-500/20 to-transparent',
-    textClass: 'text-yellow-600',
+    textClass: 'text-yellow-700 dark:text-yellow-400',
   },
   rented: {
     label: 'Alugado',

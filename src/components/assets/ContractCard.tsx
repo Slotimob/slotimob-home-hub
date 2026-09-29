@@ -181,7 +181,7 @@ export function ContractCard({
                 className={`text-[10px] ${
                   lease.signature_status === "signed"
                     ? "border-green-500 text-green-600 bg-green-50 dark:bg-green-950/30"
-                    : "border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/30"
+                    : "border-amber-500 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30"
                 }`}
               >
                 {lease.signature_status === "signed" ? (

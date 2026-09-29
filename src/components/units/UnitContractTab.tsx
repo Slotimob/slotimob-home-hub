@@ -192,7 +192,7 @@ export function UnitContractTab({ unitId }: UnitContractTabProps) {
           <div key={lease.id} className="space-y-3">
             {lease.needs_tenant_review && (
               <Alert className="border-amber-500 bg-amber-50/50 dark:bg-amber-950/20">
-                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-400" />
                 <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <span className="text-amber-900 dark:text-amber-100">
                     {lease.tenant_review_note || 'Este contrato precisa de revisão.'}
@@ -209,7 +209,7 @@ export function UnitContractTab({ unitId }: UnitContractTabProps) {
                 <CardContent className="p-6 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     <div className="flex items-start gap-3">
-                      <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                      <AlertCircle className="h-5 w-5 text-amber-700 dark:text-amber-400 mt-0.5 shrink-0" />
                       <div className="space-y-1">
                         <h3 className="text-lg font-semibold">Contrato Pré-iniciado</h3>
                         <p className="text-sm text-muted-foreground">

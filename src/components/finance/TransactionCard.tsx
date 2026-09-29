@@ -148,7 +148,7 @@ export function TransactionCard({
                 {formatDateOnly(transaction.transaction_date, "dd/MM/yy")}
               </span>
               {transaction.due_date && (
-                <span className="text-amber-600 dark:text-amber-400">
+                <span className="text-amber-700 dark:text-amber-400">
                   Venc: {formatDateOnly(transaction.due_date, "dd/MM/yy")}
                 </span>
               )}
@@ -219,7 +219,7 @@ export function TransactionCard({
                     disabled={isAlreadyImprovement}
                     onClick={() => onMarkAsImprovement(transaction)}
                   >
-                    <Hammer className="h-3.5 w-3.5 mr-2 text-amber-600" />
+                    <Hammer className="h-3.5 w-3.5 mr-2 text-amber-700 dark:text-amber-400" />
                     {isAlreadyImprovement ? "Já é uma benfeitoria" : "Marcar como Benfeitoria"}
                   </DropdownMenuItem>
                 )}

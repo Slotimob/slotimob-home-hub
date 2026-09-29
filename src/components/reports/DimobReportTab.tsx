@@ -461,7 +461,7 @@ export const DimobReportTab = () => {
         <Card className={summary.incompleteUnits > 0 ? 'border-amber-200 bg-amber-50/50' : ''}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-400" />
               Com Pendências
             </CardTitle>
           </CardHeader>
@@ -579,7 +579,7 @@ export const DimobReportTab = () => {
                       >
                         {formatCurrency(record.grossAnnualRent)}
                         {record.isEstimated && (
-                          <p className="text-[10px] text-amber-600">estimado (sem lançamentos)</p>
+                          <p className="text-[10px] text-amber-700 dark:text-amber-400">estimado (sem lançamentos)</p>
                         )}
                         {!record.isEstimated && (record.taxWithheld > 0 || record.deductions > 0) && (
                           <p className="text-[10px] text-muted-foreground">

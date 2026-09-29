@@ -261,7 +261,7 @@ export function DimobQuickResolveDialog({
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-100 rounded-lg">
-                <Icon className="h-5 w-5 text-amber-600" />
+                <Icon className="h-5 w-5 text-amber-700 dark:text-amber-400" />
               </div>
               <div>
                 <DialogTitle>{config.title}</DialogTitle>
@@ -297,7 +297,7 @@ export function DimobQuickResolveDialog({
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-100 rounded-lg">
-                <Icon className="h-5 w-5 text-amber-600" />
+                <Icon className="h-5 w-5 text-amber-700 dark:text-amber-400" />
               </div>
               <div>
                 <DialogTitle>{config.title}</DialogTitle>

@@ -52,7 +52,7 @@ export function PortalSetupDialog({ open, onOpenChange, feedUrl, publishedCount 
             </div>
             <Badge className={publishedCount > 0
               ? 'bg-green-500/10 text-green-600 border-green-500/20'
-              : 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'
+              : 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20'
             }>
               {publishedCount > 0 ? 'Ativo' : 'Sem imóveis'}
             </Badge>

@@ -116,7 +116,7 @@ export function AsaasNotificationsPanel({ leaseId, canEdit }: Props) {
               Notificações atualizadas: {syncResult.updated ?? 0}
             </p>
             {Array.isArray(syncResult.unsupported) && syncResult.unsupported.length > 0 && (
-              <p className="text-[11px] text-amber-600 dark:text-amber-400">
+              <p className="text-[11px] text-amber-700 dark:text-amber-400">
                 Não suportado pela Asaas: {syncResult.unsupported.join(", ")}
               </p>
             )}

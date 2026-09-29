@@ -198,7 +198,7 @@ export function LinkImprovementTransactionDialog({
                             </Badge>
                           </div>
                           {isOther && (
-                            <p className="text-[10px] text-amber-600 mt-1">
+                            <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1">
                               Já vinculado a outra benfeitoria
                             </p>
                           )}
