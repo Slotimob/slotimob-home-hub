@@ -493,20 +493,23 @@ export default function ContratoDetalhe() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="journey" className="gap-1 text-xs px-1">
+        {/* MOB1: rolagem horizontal no celular, ícone + texto em todas as abas */}
+        <div className="-mx-1 overflow-x-auto px-1">
+        <TabsList className="inline-flex w-max min-w-full justify-start sm:grid sm:w-full sm:grid-cols-6">
+          <TabsTrigger value="journey" className="gap-1 text-xs px-2 sm:px-1 shrink-0">
             <RouteIcon className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Jornada</span>
+            <span>Jornada</span>
           </TabsTrigger>
-          <TabsTrigger value="overview" className="text-xs px-1">Visão Geral</TabsTrigger>
-          <TabsTrigger value="fiscal" className="gap-1 text-xs px-1">
+          <TabsTrigger value="overview" className="text-xs px-2 sm:px-1 shrink-0">Visão Geral</TabsTrigger>
+          <TabsTrigger value="fiscal" className="gap-1 text-xs px-2 sm:px-1 shrink-0">
             <Scale className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Fiscal</span>
+            <span>Fiscal</span>
           </TabsTrigger>
-          <TabsTrigger value="billing" className="text-xs px-1">Cobrança</TabsTrigger>
-          <TabsTrigger value="boletos" className="text-xs px-1">Boletos</TabsTrigger>
-          <TabsTrigger value="reports" className="text-xs px-1">Relatórios</TabsTrigger>
+          <TabsTrigger value="billing" className="text-xs px-2 sm:px-1 shrink-0">Cobrança</TabsTrigger>
+          <TabsTrigger value="boletos" className="text-xs px-2 sm:px-1 shrink-0">Boletos</TabsTrigger>
+          <TabsTrigger value="reports" className="text-xs px-2 sm:px-1 shrink-0">Relatórios</TabsTrigger>
         </TabsList>
+        </div>
 
         {/* Journey */}
         <TabsContent value="journey" className="mt-4">
