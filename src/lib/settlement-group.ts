@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery , keepPreviousData} from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrencyBRL } from "@/utils/unitPricing";
 
@@ -143,6 +143,7 @@ export function useSettlementGroups(groupIds: (string | null | undefined)[]) {
     queryFn: () => fetchSettlementGroups(ids),
     enabled: ids.length > 0,
     staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -284,5 +285,6 @@ export function useRentBalanceLines(anchorIds: (string | null | undefined)[]) {
     queryFn: () => fetchRentBalanceLines(ids),
     enabled: ids.length > 0,
     staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
 }
