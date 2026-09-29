@@ -995,7 +995,9 @@ export default function NovoContrato() {
 
   const savePurpose = async (leaseId: string) => {
     const { data: row } = await supabase.from("leases").select("metadata").eq("id", leaseId).maybeSingle();
-    const metadata = { ...(((row as any)?.metadata as Record<string, unknown>) || {}), purpose: leasePurpose };
+    // W20: grava sempre a finalidade efetiva (escolhida ou sugerida)
+    const effectivePurpose = purposeTouched ? leasePurpose : suggestedPurpose || leasePurpose;
+    const metadata = { ...(((row as any)?.metadata as Record<string, unknown>) || {}), purpose: effectivePurpose };
     const { error } = await supabase.from("leases").update({ metadata } as any).eq("id", leaseId);
     if (error) console.error("[NovoContrato] Falha ao gravar a finalidade:", error);
   };
@@ -1374,6 +1376,7 @@ export default function NovoContrato() {
               rentGrace: formData.rent_grace?.enabled ? formData.rent_grace : null,
             });
             await markLeaseObligationsInherited(resultId, {});
+            await savePurpose(resultId);
             queryClient.invalidateQueries({ queryKey: ["unit-obligations-config", effectiveUnitId] });
             queryClient.invalidateQueries({ queryKey: ["asset-health"] });
           } catch (inheritError) {
