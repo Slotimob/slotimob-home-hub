@@ -131,6 +131,7 @@ export const KanbanColumn = ({
                 {/* Selection checkbox for column */}
                 {deals.length > 0 && (
                   <Checkbox
+                    aria-label={`Selecionar todos da etapa ${title}`}
                     checked={selectionMode && allSelected}
                     onCheckedChange={(checked) => {
                       if (!selectionMode && onToggleSelectionMode) {
@@ -204,7 +205,7 @@ export const KanbanColumn = ({
             )}
           </CardTitle>
         </CardHeader>
-        <CardContent data-card-scroll className="space-y-2 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain min-h-0">
+        <CardContent data-card-scroll tabIndex={0} role="region" aria-label={`Negociações da etapa ${title}`} className="space-y-2 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain min-h-0">
           {deals.map((deal) => (
             <DealCard
               key={deal.id}

@@ -395,12 +395,12 @@ const GerencialGestao = () => {
                           <TableCell>
                             <div className="flex gap-1">
                               {canEdit && (
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(tx)}>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(tx)} aria-label={`Editar ${tx.description ?? "lançamento"}`}>
                                 <Edit3 className="h-3.5 w-3.5" />
                               </Button>
                               )}
                               {canDelete && (
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(tx.id)}>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(tx.id)} aria-label={`Excluir ${tx.description ?? "lançamento"}`}>
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                               )}

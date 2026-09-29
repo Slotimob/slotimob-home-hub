@@ -89,7 +89,7 @@ export const ContactCard = ({
               <CardTitle className="text-base truncate">{contact.name}</CardTitle>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="icon" aria-label={`Ações do contato ${contact.name}`} className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -152,6 +152,7 @@ export const ContactCard = ({
                 size="icon"
                 className="h-6 w-6 ml-auto text-green-600 hover:text-green-700 hover:bg-green-50"
                 onClick={handleWhatsAppClick}
+                aria-label={`Abrir WhatsApp de ${contact.name}`}
               >
                 <MessageSquare className="h-4 w-4" />
               </Button>

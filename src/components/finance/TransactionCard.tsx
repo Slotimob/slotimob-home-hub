@@ -158,7 +158,7 @@ export function TransactionCard({
         <div onClick={(e) => e.stopPropagation()}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Ações do lançamento ${transaction.description}`}>
                 <MoreHorizontal className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
@@ -291,6 +291,7 @@ export function TransactionCard({
             <Button
               variant="ghost"
               size="icon"
+              aria-label={transaction.is_reconciled ? `Conciliação de ${transaction.description}` : `Conciliar com extrato: ${transaction.description}`}
               className={cn(
                 "h-7 w-7 rounded-full transition-all",
                 transaction.is_reconciled 

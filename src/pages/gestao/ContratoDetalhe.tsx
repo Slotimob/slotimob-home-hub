@@ -427,7 +427,7 @@ export default function ContratoDetalhe() {
               {(canEdit || canDelete) && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-9 w-9">
+                    <Button variant="outline" size="icon" className="h-9 w-9" aria-label="Mais ações do contrato">
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>

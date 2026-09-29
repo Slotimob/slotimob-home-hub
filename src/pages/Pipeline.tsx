@@ -752,7 +752,7 @@ const Pipeline = () => {
           {isCurrentPipelineCustom && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Opções do pipeline">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Opções do pipeline" aria-label="Opções do pipeline">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -990,6 +990,7 @@ const Pipeline = () => {
       <Button
         className="fixed bottom-24 right-4 z-50 rounded-full shadow-lg md:hidden h-14 w-14"
         size="icon"
+        aria-label="Ir para adicionar etapa"
         onClick={() => {
           const el = kanbanScrollRef.current;
           if (el) {

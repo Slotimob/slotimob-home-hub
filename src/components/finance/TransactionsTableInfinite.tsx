@@ -631,7 +631,7 @@ export function TransactionsTableInfinite({
   return (
     <TooltipProvider delayDuration={100}>
       <div className="rounded-md border overflow-hidden w-full overflow-x-auto">
-        <div className="max-h-[calc(100vh-300px)] overflow-auto">
+        <div className="max-h-[calc(100vh-300px)] overflow-auto" tabIndex={0} role="region" aria-label="Tabela de lançamentos">
           <Table>
             <TableHeader className="sticky top-0 bg-card z-10">
               <TableRow>
@@ -749,6 +749,7 @@ export function TransactionsTableInfinite({
                                 "hover:bg-blue-500/10 border border-dashed border-blue-300/50 hover:border-blue-400"
                               )}
                               onClick={() => handleOpenReconciliationMatcher(transaction)}
+                              aria-label={`Conciliar com extrato: ${transaction.description}`}
                               disabled={isCurrentlyReconciling || isReconciling}
                             >
                               {isCurrentlyReconciling ? (
@@ -888,7 +889,7 @@ export function TransactionsTableInfinite({
                     <TableCell className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-6 w-6">
+                          <Button variant="ghost" size="icon" className="h-6 w-6" aria-label={`Ações do lançamento ${transaction.description}`}>
                             <MoreHorizontal className="h-3.5 w-3.5" />
                           </Button>
                         </DropdownMenuTrigger>
