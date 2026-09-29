@@ -39,25 +39,43 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
   const [periodMonths, setPeriodMonths] = useState("6");
   const [isGenerating, setIsGenerating] = useState(false);
 
+  const isWhole = periodMonths === "all";
   const periodDates = useMemo(() => {
-    const months = parseInt(periodMonths);
+    if (isWhole && lease.start_date) {
+      return { start: parseDateOnly(lease.start_date.slice(0, 10)), end: endOfMonth(new Date()) };
+    }
+    const months = parseInt(periodMonths) || 6;
     return { start: startOfMonth(subMonths(new Date(), months - 1)), end: endOfMonth(new Date()) };
-  }, [periodMonths]);
+  }, [periodMonths, isWhole, lease.start_date]);
+  // Regra: pagas pela data do pagamento; abertas pelo vencimento.
+  // "Contrato inteiro" inclui os próximos vencimentos já lançados.
+  const range = useMemo(
+    () => ({
+      start: format(periodDates.start, "yyyy-MM-dd"),
+      end: isWhole ? "9999-12-31" : format(periodDates.end, "yyyy-MM-dd"),
+    }),
+    [periodDates, isWhole],
+  );
 
   const { data: txData, isLoading } = useQuery({
-    queryKey: ["lease-transactions", lease.id, periodDates.start, periodDates.end],
+    queryKey: ["lease-transactions", lease.id, range.start, range.end],
     queryFn: async () => {
       if (!user) return { rows: [] as any[], groups: {} as Record<string, any[]> };
-      const { data, error } = await supabase
-        .from("financial_transactions")
-        .select("*")
-        .or(`lease_id.eq.${lease.id},reference.like.lease:${lease.id}%`)
-        .neq("status", "cancelled")
-        .gte("due_date", format(periodDates.start, "yyyy-MM-dd"))
-        .lte("due_date", format(periodDates.end, "yyyy-MM-dd"))
-        .order("due_date", { ascending: true });
-      if (error) throw error;
-      const rows = data || [];
+      const base = () =>
+        supabase
+          .from("financial_transactions")
+          .select("*")
+          .or(`lease_id.eq.${lease.id},reference.like.lease:${lease.id}%`)
+          .neq("status", "cancelled");
+      const [byDue, byPaid] = await Promise.all([
+        base().gte("due_date", range.start).lte("due_date", range.end).order("due_date", { ascending: true }),
+        base().eq("status", "paid").gte("paid_date", range.start).lte("paid_date", range.end),
+      ]);
+      if (byDue.error) throw byDue.error;
+      if (byPaid.error) throw byPaid.error;
+      const map = new Map<string, any>();
+      [...(byDue.data || []), ...(byPaid.data || [])].forEach((t: any) => map.set(t.id, t));
+      const rows = Array.from(map.values()).sort((a, b) => (a.due_date || "").localeCompare(b.due_date || ""));
       const ids = rows
         .filter((t: any) => t.settlement_group_id && t.type === "income" && isRentIncome(t))
         .map((t: any) => t.settlement_group_id as string);
@@ -68,17 +86,20 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
   });
 
   const paymentHistory: PaymentHistoryItem[] = useMemo(() => {
-    const months = parseInt(periodMonths);
     const periods: string[] = [];
-    for (let i = months - 1; i >= 0; i--) periods.push(format(subMonths(new Date(), i), "yyyy-MM"));
+    const endP = format(new Date(), "yyyy-MM");
+    for (let d = startOfMonth(periodDates.start); format(d, "yyyy-MM") <= endP; d = startOfMonth(subMonths(d, -1))) {
+      periods.push(format(d, "yyyy-MM"));
+    }
     return buildTenantStatementMonths({
       periods,
+      range,
       lease: lease as any,
       rows: txData?.rows || [],
       groups: txData?.groups || {},
       today: todayInSaoPauloDateOnly(),
     });
-  }, [txData, periodMonths, lease]);
+  }, [txData, periodDates, range, lease]);
 
   const summary = useMemo(() => {
     const paid = paymentHistory.filter((p) => p.status === "paid");
@@ -159,6 +180,7 @@ export function TenantStatementDialog({ open, onOpenChange, lease }: TenantState
               <SelectItem value="6">Últimos 6 meses</SelectItem>
               <SelectItem value="12">Últimos 12 meses</SelectItem>
               <SelectItem value="24">Últimos 24 meses</SelectItem>
+              {lease.start_date && <SelectItem value="all">Contrato inteiro</SelectItem>}
             </SelectContent>
           </Select>
         </div>

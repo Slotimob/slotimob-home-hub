@@ -36,3 +36,17 @@ describe("buildRentInstallments — 1º vencimento >= início", () => {
     expect(b.amount).toBe(3000);
   });
 });
+
+import { nextDueFromConfig } from "@/lib/lease-special-conditions";
+describe("nextDueFromConfig", () => {
+  it("pula competência isenta de carência", () => {
+    const r = nextDueFromConfig(
+      { start_date: "2026-10-01", due_day: 10, rent_grace: { enabled: true, tiers: [{ months: 1, mode: "free", value: 0 }] } as any },
+      "2026-09-29",
+    );
+    expect(r).toEqual({ competency: "2026-11", dueDate: "2026-11-10" });
+  });
+  it("início 29/09 dia 10 → 10/10 (competência set)", () => {
+    expect(nextDueFromConfig({ start_date: "2026-09-29", due_day: 10 }, "2026-09-29")).toEqual({ competency: "2026-09", dueDate: "2026-10-10" });
+  });
+});

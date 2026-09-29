@@ -41,6 +41,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SettlementBreakdownPopover } from "@/components/finance/SettlementBreakdownPopover";
 import { fetchSettlementGroups, settlementBreakdown } from "@/lib/settlement-group";
 import { LeaseFinancialConditionsCard, computeLeaseMonthFromConfig } from "@/components/assets/LeaseFinancialConditionsCard";
+import { useLeaseNextDue } from "@/hooks/useLeaseNextDue";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -167,12 +168,12 @@ export default function ContratoDetalhe() {
     enabled: !!lease?.unit_subdivision_id,
   });
 
-  const nextDueDate = useMemo(() => {
-    if (!lease) return null;
-    const today = new Date();
-    const current = new Date(today.getFullYear(), today.getMonth(), lease.due_day);
-    return isBefore(current, today) ? addMonths(current, 1) : current;
-  }, [lease]);
+  // C6: aluguel pendente mais antigo; sem lançamento, pela configuração (pula carência isenta)
+  const nextDue = useLeaseNextDue(lease as any);
+  const nextDueDate = useMemo(
+    () => (nextDue ? new Date(`${nextDue.dueDate}T00:00:00`) : null),
+    [nextDue?.dueDate],
+  );
 
   const billingStatus = useMemo(() => {
     if (!lease || !nextDueDate) return { reminder5: false, dueDay: false, overdue: false };
@@ -194,17 +195,22 @@ export default function ContratoDetalhe() {
       const [yy, mm] = nowSp.split("-").map(Number);
       const rangeStart = toDateOnly(new Date(yy, mm - 3, 1));
       const rangeEnd = toDateOnly(new Date(yy, mm, 0));
-      const { data, error } = await supabase
-        .from("financial_transactions")
-        .select("id, amount, due_date, paid_date, status, description, type, obligation_type, settlement_group_id, competency_period, lease_id")
-        .eq("broker_id", effectiveBrokerId || user!.id)
-        .or(`lease_id.eq.${lease.id},reference.like.lease:${lease.id}%`)
-        .neq("status", "cancelled")
-        .gte("due_date", rangeStart)
-        .lte("due_date", rangeEnd)
-        .order("due_date", { ascending: true })
-        .limit(60);
-      if (error) throw error;
+      // Mesmo regime do relatório: pagos pela data do pagamento, abertos pelo vencimento.
+      const base = () =>
+        supabase
+          .from("financial_transactions")
+          .select("id, amount, due_date, paid_date, status, description, type, obligation_type, settlement_group_id, competency_period, lease_id")
+          .eq("broker_id", effectiveBrokerId || user!.id)
+          .or(`lease_id.eq.${lease.id},reference.like.lease:${lease.id}%`)
+          .neq("status", "cancelled");
+      const [paidRes, openRes] = await Promise.all([
+        base().eq("status", "paid").gte("paid_date", rangeStart).lte("paid_date", rangeEnd).limit(60),
+        base().neq("status", "paid").gte("due_date", rangeStart).lte("due_date", rangeEnd).limit(60),
+      ]);
+      if (paidRes.error) throw paidRes.error;
+      if (openRes.error) throw openRes.error;
+      const refDate = (t: any) => (t.status === "paid" ? t.paid_date || t.due_date : t.due_date) || "";
+      const data = [...(paidRes.data || []), ...(openRes.data || [])].sort((a, b) => refDate(a).localeCompare(refDate(b)));
       // Baixa conjunta: o grupo vira UMA linha (âncora = receita de aluguel) com o líquido.
       const isAnchor = (t: any) =>
         t.type === "income" &&
@@ -275,6 +281,11 @@ export default function ContratoDetalhe() {
   });
 
   const hasWhatsappConnected = !!whatsappConnection;
+
+  const ownerHasTx =
+    !!ownerMonthTx &&
+    (ownerMonthTx.income.length > 0 || ownerMonthTx.expenses.length > 0) &&
+    !(lease?.start_date && todayInSaoPauloDateOnly() < lease.start_date.slice(0, 10));
 
   const capitalizedMonth = useMemo(() => {
     const m = format(new Date(), "MMMM/yyyy", { locale: ptBR });
@@ -684,15 +695,16 @@ export default function ContratoDetalhe() {
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Receipt className="h-4 w-4 text-emerald-500" />
-                Relatório do Proprietário — {capitalizedMonth}
+                Relatório do Proprietário — {ownerHasTx ? `Recebido em ${capitalizedMonth} (data do pagamento)` : "Mês típico"}
               </CardTitle>
             </CardHeader>
             <CardContent className="py-2 px-4">
               {(() => {
                 const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
                 const feePct = Number(lease.admin_fee_percentage) || 0;
-                const hasTx = !!ownerMonthTx && (ownerMonthTx.income.length > 0 || ownerMonthTx.expenses.length > 0);
-                const cfg = computeLeaseMonthFromConfig(lease as any, todayInSaoPauloDateOnly().slice(0, 7));
+                const hasTx = ownerHasTx;
+                // R4: sem pagamento no mês (ou antes do início), "Mês típico" pela configuração
+                const cfg = computeLeaseMonthFromConfig(lease as any);
                 const rep = hasTx
                   ? computeOwnerReport({ income: ownerMonthTx!.income as any, expenses: ownerMonthTx!.expenses as any, adminFeePercentage: feePct })
                   : (() => {
@@ -730,11 +742,11 @@ export default function ContratoDetalhe() {
                     )}
                     <Separator />
                     <div className="flex justify-between">
-                      <span className="font-medium">{hasTx ? "Repasse líquido" : "Repasse Líquido Estimado"}</span>
+                      <span className="font-medium">{hasTx ? "Repasse líquido" : "Repasse líquido do mês típico"}</span>
                       <span className="font-bold text-emerald-600 text-base">{fmt(rep.netTransfer)}</span>
                     </div>
                     {!hasTx && (
-                      <p className="text-[11px] text-muted-foreground">Estimado pela configuração (sem lançamentos pagos no mês).</p>
+                      <p className="text-[11px] text-muted-foreground">Mês típico, estimado pela configuração (aluguel − abatimentos − IRRF − taxa de administração).</p>
                     )}
                   </div>
                 );
@@ -756,7 +768,7 @@ export default function ContratoDetalhe() {
             <CardContent className="py-2 px-4">
               {!recentTransactions || recentTransactions.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-2">
-                  Nenhum lançamento nos últimos 3 meses.
+                  Sem recebimentos nem vencimentos nos últimos 3 meses.
                 </p>
               ) : (
                 <div className="divide-y">
@@ -765,6 +777,7 @@ export default function ContratoDetalhe() {
                     const paid = t.paid_date ? new Date(t.paid_date + "T00:00:00") : null;
                     const today = new Date();
                     const isPaid = t.status === "paid" || !!paid;
+                    const monthRef = isPaid && paid ? paid : due;
                     const isOverdue = !isPaid && due && due < today;
                     const statusLabel = isPaid ? "Pago" : isOverdue ? "Atrasado" : "Pendente";
                     const statusClass = isPaid
@@ -776,7 +789,7 @@ export default function ContratoDetalhe() {
                       <div key={t.id} className="flex items-center justify-between py-2 text-xs">
                         <div className="min-w-0 flex-1">
                           <p className="font-medium">
-                            {due ? format(due, "MMM/yyyy", { locale: ptBR }) : "—"}
+                            {monthRef ? format(monthRef, "MMM/yyyy", { locale: ptBR }) : "—"}
                           </p>
                           <p className="text-muted-foreground truncate">
                             {paid ? `Pago em ${format(paid, "dd/MM/yyyy")}` : due ? `Vence ${format(due, "dd/MM/yyyy")}` : ""}

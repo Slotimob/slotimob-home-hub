@@ -18,6 +18,15 @@ const pad = (n: number) => String(n).padStart(2, "0");
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 /**
+ * Regra do período do extrato: linha paga entra pela data do pagamento;
+ * linha aberta/atrasada entra pelo vencimento.
+ */
+export function rowInStatementRange(t: any, range: { start: string; end: string }): boolean {
+  const d = t.status === "paid" ? t.paid_date || t.due_date : t.due_date;
+  return !!d && d >= range.start && d <= range.end;
+}
+
+/**
  * Monta as linhas do extrato do inquilino.
  * @param periods competências "yyyy-MM" do período, em ordem crescente
  * @param today "yyyy-MM-dd"
@@ -28,8 +37,20 @@ export function buildTenantStatementMonths(params: {
   rows: any[];
   groups: Record<string, any[]>;
   today: string;
+  /** Com período ("yyyy-MM-dd"), competências fora da lista entram quando
+   *  têm aluguel pago no período (pagamento antecipado) ou vencendo nele. */
+  range?: { start: string; end: string };
 }): PaymentHistoryItem[] {
-  const { periods, lease, rows: allRows, groups, today } = params;
+  const { lease, rows: allRows, groups, today, range } = params;
+  let periods = params.periods;
+  if (range) {
+    const extra = new Set(periods);
+    for (const t of allRows) {
+      if (t.type !== "income" || !isRentIncome(t) || !rowInStatementRange(t, range)) continue;
+      extra.add(t.competency_period || (t.due_date || "").slice(0, 7));
+    }
+    periods = Array.from(extra).filter(Boolean).sort();
+  }
   const startP = lease.start_date ? lease.start_date.slice(0, 7) : null;
   const endCandidates: string[] = [];
   if (lease.termination_date) endCandidates.push(lease.termination_date.slice(0, 7));
