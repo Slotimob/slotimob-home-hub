@@ -169,7 +169,7 @@ export function ProjectionBlock({
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-muted-foreground tabular-nums">
-            {selectedList.length} de {installments.length} parcelas ·{" "}
+            {countLabel ?? `${selectedList.length} de ${installments.length} parcelas`} ·{" "}
             <span className="font-medium text-foreground">{formatCurrency(total)}</span>
           </span>
           <div className="flex items-center gap-2">
