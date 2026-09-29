@@ -1,3 +1,4 @@
+import { focusFirstInvalid } from "@/lib/form-errors";
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useCustomPipelines } from '@/hooks/useCustomPipelines';
 import { useAuth } from '@/hooks/useAuth';
@@ -115,6 +116,11 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
   const [leads, setLeads] = useState<{ id: string; name: string; email?: string | null; phone?: string | null; origin?: string | null }[]>([]);
   const [units, setUnits] = useState<UnitOption[]>([]);
   const [showNewLeadForm, setShowNewLeadForm] = useState(false);
+  const [leadInvalid, setLeadInvalid] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (formData.lead_id || newLeadData.name.trim()) setLeadInvalid(false);
+  }, [formData.lead_id, newLeadData.name]);
   const [leadOpen, setLeadOpen] = useState(false);
   const [unitOpen, setUnitOpen] = useState(false);
   const [leadSearch, setLeadSearch] = useState('');
@@ -287,7 +293,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
   const selectedLead = leads.find(l => l.id === formData.lead_id);
   const selectedUnit = units.find(u => u.id === formData.unit_id);
 
-  const handleCreateLead = async () => {
+  const handleCreateLead = async (): Promise<string | null> => {
     try {
       const payload = {
         name: newLeadData.name.trim(),
@@ -317,6 +323,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
       setInlineLeadId(data.id);
       setShowNewLeadForm(false);
       setNewLeadData({ name: '', email: '', phone: '', origin: '' });
+      return data.id as string;
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast({
@@ -334,15 +341,23 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
     } finally {
       setSavingLead(false);
     }
+    return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.lead_id) {
+    let leadId = formData.lead_id;
+    // CRM14: bloco "Novo Lead" aberto com nome — cria o lead antes da negociação
+    if (!leadId && showNewLeadForm && newLeadData.name.trim()) {
+      leadId = (await handleCreateLead()) || '';
+      if (!leadId) return;
+    }
+    if (!leadId) {
+      setLeadInvalid(true);
+      focusFirstInvalid(contentRef.current);
       toast({
-        title: 'Erro de validação',
-        description: 'Selecione um lead.',
+        title: 'Selecione um lead ou preencha o nome do novo lead.',
         variant: 'destructive',
       });
       return;
@@ -369,7 +384,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
       // property_id is optional - don't create phantom "Imóveis Avulsos" properties
 
       const dealPayload = {
-        lead_id: formData.lead_id,
+        lead_id: leadId,
         title: formData.title || null,
         property_id: propertyId || null,
         unit_id: formData.unit_id || null,
@@ -391,11 +406,11 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
       if (error) throw error;
 
       // Update lead origin if provided
-      if (formData.lead_origin && formData.lead_id) {
+      if (formData.lead_origin && leadId) {
         await supabase
           .from('leads')
           .update({ origin: formData.lead_origin })
-          .eq('id', formData.lead_id);
+          .eq('id', leadId);
       }
 
       // Create initial task if provided
@@ -444,7 +459,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
+      <DialogContent ref={contentRef} className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
         <DialogHeader>
           <DialogTitle>Nova Negociação</DialogTitle>
           <DialogDescription>
@@ -481,7 +496,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
               id="deal_title"
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="Ex: Venda Apt 302 - Edifício Aurora"
+              placeholder={formData.business_type === 'rental' ? 'Ex: Locação Apt 302 - Edifício Aurora' : 'Ex: Venda Apt 302 - Edifício Aurora'}
               maxLength={150}
             />
           </div>
@@ -611,7 +626,8 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
                     variant="outline"
                     role="combobox"
                     aria-expanded={leadOpen}
-                    className="w-full justify-between font-normal"
+                    aria-invalid={leadInvalid}
+                    className={cn("w-full justify-between font-normal", leadInvalid && "border-destructive")}
                   >
                     {selectedLead ? selectedLead.name : 'Selecione um lead...'}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -1009,7 +1025,7 @@ export const CreateDealDialog = ({ open, onOpenChange, onSuccess, pipelineType =
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={saving || !formData.lead_id}>
+            <Button type="submit" disabled={saving || savingLead}>
               {saving ? 'Criando...' : 'Criar Negociação'}
             </Button>
           </div>
