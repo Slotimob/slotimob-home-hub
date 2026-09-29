@@ -81,7 +81,7 @@ export function DashboardDateFilter({
       <Button aria-label="Atualizar dados do painel"
         variant="outline"
         size="icon"
-        className="h-9 w-9"
+        className="h-9 w-9 max-sm:min-h-10 max-sm:min-w-10"
         onClick={onRefresh}
         disabled={isRefreshing}
       >

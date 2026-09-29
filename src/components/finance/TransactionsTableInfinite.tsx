@@ -488,7 +488,7 @@ export function TransactionsTableInfinite({
             <Button
               variant="outline"
               size="icon"
-              className="h-9 w-9 shrink-0"
+              className="h-9 w-9 shrink-0 max-sm:min-h-10 max-sm:min-w-10"
               aria-label={sortConfig.order === "desc" ? "Ordem decrescente" : "Ordem crescente"}
               title={sortConfig.order === "desc" ? "Decrescente" : "Crescente"}
               onClick={() =>
@@ -749,7 +749,7 @@ export function TransactionsTableInfinite({
                               variant="ghost"
                               size="icon"
                               className={cn(
-                                "h-6 w-6 rounded-full transition-all",
+                                "h-6 w-6 rounded-full transition-all max-sm:min-h-10 max-sm:min-w-10",
                                 "hover:bg-blue-500/10 border border-dashed border-blue-300/50 hover:border-blue-400"
                               )}
                               onClick={() => handleOpenReconciliationMatcher(transaction)}
@@ -900,7 +900,7 @@ export function TransactionsTableInfinite({
                     <TableCell className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-6 w-6" aria-label={`Ações do lançamento ${transaction.description}`}>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 max-sm:min-h-10 max-sm:min-w-10" aria-label={`Ações do lançamento ${transaction.description}`}>
                             <MoreHorizontal className="h-3.5 w-3.5" />
                           </Button>
                         </DropdownMenuTrigger>
