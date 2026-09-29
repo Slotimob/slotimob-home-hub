@@ -1,3 +1,5 @@
+import { cn } from '@/lib/utils';
+import { dreRegimeFilter } from '@/lib/dre-sections';
 import { useEffect, useState } from 'react';
 import { formatDateOnly, parseDateOnly, toDateOnly } from "@/lib/date-only";
 import { format, startOfDay, isBefore } from 'date-fns';
@@ -60,10 +62,12 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
     payables: [],
   });
   const [isLoading, setIsLoading] = useState(true);
+  // D4: regime dos totais (padrão: data do pagamento = caixa, igual ao card de Aluguéis)
+  const [regime, setRegime] = useState<'caixa' | 'contabil'>('caixa');
 
   useEffect(() => {
     loadFinancialData();
-  }, [dateRange, refreshKey]);
+  }, [dateRange, refreshKey, regime]);
 
   const loadFinancialData = async () => {
     try {
@@ -72,14 +76,15 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
       const fromDate = toDateOnly(dateRange.from);
       const toDate = toDateOnly(dateRange.to);
 
-      // Get paid transactions within the date range for totals
-      // Using due_date for Cash Flow perspective (when money is expected to move)
-      const { data: transactions, error: transError } = await supabase
+      // Totais pelo regime escolhido (mesmo filtro da DRE): caixa = paid_date; emissão = transaction_date
+      const regimeFilter = dreRegimeFilter(regime, [{ start: fromDate, end: toDate }]);
+      let totalsQuery = supabase
         .from('financial_transactions')
-        .select('*')
-        .eq('status', 'paid')
-        .gte('due_date', fromDate)
-        .lte('due_date', toDate);
+        .select('type, amount, status')
+        .neq('status', 'cancelled')
+        .or(regimeFilter.or);
+      if (regimeFilter.paidOnly) totalsQuery = totalsQuery.eq('status', 'paid');
+      const { data: transactions, error: transError } = await totalsQuery;
 
       if (transError) throw transError;
 
@@ -171,8 +176,25 @@ export function FinancialWidget({ dateRange, refreshKey, isLoading: externalLoad
               <HelpTooltip featureKey="dashboard.cash_flow_performance" />
             </CardTitle>
             <CardDescription className="text-[10px] lg:text-xs truncate">
+              {regime === 'caixa' ? 'Receitas recebidas no período' : 'Receitas emitidas no período'} ·{' '}
               {format(dateRange.from, 'dd/MM', { locale: ptBR })} - {format(dateRange.to, 'dd/MM/yyyy', { locale: ptBR })}
             </CardDescription>
+            <div className="mt-1 inline-flex rounded-md border p-0.5 text-[10px] lg:text-xs" role="group" aria-label="Regime">
+              {([['caixa', 'Por data de pagamento'], ['contabil', 'Por emissão']] as const).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={regime === value}
+                  onClick={() => setRegime(value)}
+                  className={cn(
+                    'px-2 py-0.5 rounded-sm transition-colors',
+                    regime === value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
           <Button variant="ghost" size="sm" className="text-xs px-2 flex-shrink-0" onClick={() => navigate('/finance')}>
             <span className="hidden sm:inline">Ver Todos</span>
