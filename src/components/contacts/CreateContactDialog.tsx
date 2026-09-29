@@ -81,6 +81,9 @@ export const CreateContactDialog = ({
 }: CreateContactDialogProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const [triedSubmit, setTriedSubmit] = useState(false);
+  useEffect(() => {
+    if (!open) setTriedSubmit(false);
+  }, [open]);
   const { user } = useAuth();
   const { effectiveBrokerId } = useWorkspace();
   const { toast } = useToast();
@@ -440,7 +443,7 @@ export const CreateContactDialog = ({
                 aria-invalid={!!docError && (triedSubmit || onlyDigits(formData.document_number).length >= 11)}
                 className={docError && (triedSubmit || onlyDigits(formData.document_number).length >= 11) ? 'border-destructive' : ''}
               />
-                {docError && onlyDigits(formData.document_number).length >= (formData.document_type === 'CNPJ' ? 14 : 11) && (
+                {docError && (triedSubmit || onlyDigits(formData.document_number).length >= (formData.document_type === 'CNPJ' ? 14 : 11)) && (
                   <p className="text-xs text-destructive">{docError}</p>
                 )}
             </div>
