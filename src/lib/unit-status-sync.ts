@@ -92,7 +92,7 @@ export async function syncUnitStatusForLease(
 }
 
 
-const LIVE_LEASE_STATUSES = ["active", "pending"];
+export const LIVE_LEASE_STATUSES = ["active", "pending"];
 
 /** Imóvel do contrato: unidade inteira (`unit_subdivision_id` nulo) ou uma fração. */
 export interface LeaseUnitRef {
